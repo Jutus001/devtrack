@@ -605,7 +605,7 @@ select.form-input { cursor: pointer; }
           <button class="panel-close" onclick="closePanel()">×</button>
         </div>
         <div class="panel-meta">
-          <select class="meta-select" id="panel-type" onchange="updateTaskField('type',this.value);renderView()">
+          <select class="meta-select" id="panel-type" onchange="updateTaskField('task_type',this.value);renderView()">
             <option>Feature</option><option>Bug</option><option>Fix</option><option>Idea</option><option>Chore</option>
           </select>
           <select class="meta-select" id="panel-status" onchange="updateTaskField('status',this.value);renderView()">
@@ -764,27 +764,28 @@ async function save() {
   if (!user) return;
 
   if (state._pendingProjects && state._pendingProjects.length) {
-    await sb.from('projects').upsert(
-      state._pendingProjects.map(p => ({
-        id: p.id, user_id: user.id, name: p.name,
-        description: p.description || '', stack: p.stack || '',
-        status: p.status, color: p.color, created_at: p.created
-      }))
-    );
-    state._pendingProjects = [];
+    const rows = state._pendingProjects.map(p => ({
+      id: p.id, user_id: user.id, name: p.name,
+      description: p.description || '', stack: p.stack || '',
+      status: p.status, color: p.color, created_at: p.created
+    }));
+    const { error } = await sb.from('projects').upsert(rows, { onConflict: 'id' });
+    if (error) console.error('Project save error:', error.message, error.details);
+    else state._pendingProjects = [];
   }
+
   if (state._pendingTasks && state._pendingTasks.length) {
-    await sb.from('tasks').upsert(
-      state._pendingTasks.map(t => ({
-        id: t.id, user_id: user.id, project_id: t.projectId,
-        title: t.title, type: t.type, status: t.status, priority: t.priority,
-        description: t.description || '', prompt: t.prompt || '',
-        tags: t.tags || [], notes: t.notes || [],
-        archived: t.archived || false,
-        created_at: t.created, updated_at: t.updated
-      }))
-    );
-    state._pendingTasks = [];
+    const rows = state._pendingTasks.map(t => ({
+      id: t.id, user_id: user.id, project_id: t.projectId,
+      title: t.title, task_type: t.task_type || t.type || 'Feature', status: t.status, priority: t.priority,
+      description: t.description || '', prompt: t.prompt || '',
+      tags: t.tags || [], notes: t.notes || [],
+      archived: t.archived || false,
+      created_at: t.created, updated_at: t.updated
+    }));
+    const { error } = await sb.from('tasks').upsert(rows, { onConflict: 'id' });
+    if (error) console.error('Task save error:', error.message, error.details);
+    else state._pendingTasks = [];
   }
 }
 
@@ -843,7 +844,7 @@ async function load() {
   }));
   state.tasks = (tasks || []).map(t => ({
     id: t.id, projectId: t.project_id, title: t.title,
-    type: t.type, status: t.status, priority: t.priority,
+    type: t.task_type || t.type, status: t.status, priority: t.priority,
     description: t.description, prompt: t.prompt,
     tags: t.tags || [], notes: t.notes || [],
     archived: t.archived, created: t.created_at, updated: t.updated_at
@@ -874,7 +875,7 @@ function renderSidebar() {
 
 function activateProject(id, doSave=true) {
   state.activeProjectId = id;
-  if (doSave) save();
+  // doSave is ignored — saving is handled by queueProject/queueTask explicitly
   const p = state.projects.find(x => x.id === id);
   if (!p) return;
   document.getElementById('no-project').style.display = 'none';
@@ -894,7 +895,7 @@ function activateProject(id, doSave=true) {
 function renderStats() {
   const tasks = activeTasks();
   const done = tasks.filter(t => t.status==='Done').length;
-  const bugs = tasks.filter(t => t.type==='Bug').length;
+  const bugs = tasks.filter(t => (t.task_type||t.type)==='Bug').length;
   const ip = tasks.filter(t => t.status==='In Progress').length;
   const pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
   document.getElementById('stats-row').innerHTML = `
@@ -915,7 +916,7 @@ function filteredTasks() {
   const fp = document.getElementById('filter-priority').value;
   return activeTasks().filter(t => {
     if (q && !t.title.toLowerCase().includes(q) && !(t.description||'').toLowerCase().includes(q)) return false;
-    if (ft && t.type !== ft) return false;
+    if (ft && (t.task_type||t.type) !== ft) return false;
     if (fp && t.priority !== fp) return false;
     return true;
   });
@@ -960,7 +961,7 @@ function renderKanban() {
 }
 
 function taskCard(t) {
-  const typeClass = 't-'+t.type.toLowerCase();
+  const typeClass = 't-'+(t.task_type||t.type||'feature').toLowerCase();
   const pClass = 'p-'+t.priority.toLowerCase();
   const tags = (t.tags||[]).slice(0,3).map(tag=>`<span class="tag">${esc(tag)}</span>`).join('');
   return `<div class="task-card" draggable="true" data-id="${t.id}"
@@ -970,7 +971,7 @@ function taskCard(t) {
     ontouchstart="onTouchStart(event,'${t.id}')">
     <div class="card-top">
       <div class="card-title">${esc(t.title)}</div>
-      <span class="type-badge ${typeClass}">${t.type}</span>
+      <span class="type-badge ${typeClass}">${t.task_type||t.type||'Feature'}</span>
     </div>
     <div class="card-meta">
       <div class="priority-dot ${pClass}" style="background:currentColor;width:5px;height:5px;border-radius:50%"></div>
@@ -1222,10 +1223,10 @@ function renderTable() {
   const tbody = document.getElementById('table-body');
   if (!tasks.length) { tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">No tasks found</td></tr>`; return; }
   tbody.innerHTML = tasks.map(t => {
-    const tc='t-'+t.type.toLowerCase(), pc='p-'+t.priority.toLowerCase();
+    const tc='t-'+(t.task_type||t.type||'feature').toLowerCase(), pc='p-'+t.priority.toLowerCase();
     return `<tr onclick="openTask('${t.id}')">
       <td class="title-cell"><span>${esc(t.title)}</span></td>
-      <td><span class="type-badge ${tc}">${t.type}</span></td>
+      <td><span class="type-badge ${tc}">${t.task_type||t.type||'Feature'}</span></td>
       <td><span style="font-size:11px;font-family:var(--mono);color:${STATUS_DOTS[t.status]||'var(--text3)'}">${t.status}</span></td>
       <td class="${pc}" style="font-size:11px;font-family:var(--mono)">${t.priority}</td>
       <td class="muted">${fmtDate(t.updated||t.created)}</td>
@@ -1242,7 +1243,7 @@ function openTask(id) {
   const titleEl = document.getElementById('panel-title');
   titleEl.value = t.title;
   autoResize(titleEl);
-  document.getElementById('panel-type').value = t.type;
+  document.getElementById('panel-type').value = t.task_type || t.type || 'Feature';
   document.getElementById('panel-status').value = t.status;
   document.getElementById('panel-priority').value = t.priority;
   document.getElementById('panel-desc').value = t.description||'';
@@ -1269,7 +1270,7 @@ function updateTaskField(field, val) {
   if (!currentTaskId) return;
   const t = state.tasks.find(x => x.id===currentTaskId);
   if (t) { t[field]=val; t.updated=new Date().toISOString(); queueTask(t.id); }
-  if (field==='status'||field==='type'||field==='priority') renderView();
+  if (field==='status'||field==='task_type'||field==='priority') renderView();
 }
 function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 
@@ -1357,7 +1358,7 @@ function saveNewTask() {
   const now = new Date().toISOString();
   const task = {
     id: uid(), projectId: state.activeProjectId,
-    title, type: document.getElementById('task-type-input').value,
+    title, task_type: document.getElementById('task-type-input').value,
     status: document.getElementById('task-status-input').value,
     priority: document.getElementById('task-priority-input').value,
     description:'', prompt:'', tags:[], notes:[],
@@ -1537,7 +1538,7 @@ async function seedIfEmpty() {
   const titles=['Design landing page','Login crash on Safari','Dark mode toggle','User settings panel','Fix form validation','Set up repo'];
   const priorities=['High','Critical','Medium','High','Medium','Low'];
   titles.forEach((title,i) => {
-    state.tasks.push({id:uid(),projectId:pid,title,type:types[i],status:statuses[i],priority:priorities[i],description:'',prompt:'',tags:i===0?['ui','design']:i===1?['safari','auth']:[],notes:[],created:new Date(Date.now()-i*86400000).toISOString(),updated:new Date(Date.now()-i*3600000).toISOString(),archived:false});
+    state.tasks.push({id:uid(),projectId:pid,title,task_type:types[i],status:statuses[i],priority:priorities[i],description:'',prompt:'',tags:i===0?['ui','design']:i===1?['safari','auth']:[],notes:[],created:new Date(Date.now()-i*86400000).toISOString(),updated:new Date(Date.now()-i*3600000).toISOString(),archived:false});
   });
   state._pendingProjects = [...state.projects];
   state._pendingTasks = [...state.tasks];
