@@ -1525,7 +1525,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ─── INIT ──────────────────────────────────────────────────
-load();
+document.addEventListener('DOMContentLoaded', () => load());
 
 // ─── SEED ──────────────────────────────────────────────────
 async function seedIfEmpty() {
