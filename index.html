@@ -1464,10 +1464,70 @@ document.addEventListener('keydown', e => {
 document.getElementById('modal-project').addEventListener('click', e => { if (e.target===e.currentTarget) closeProjectModal(); });
 document.getElementById('modal-task').addEventListener('click', e => { if (e.target===e.currentTarget) closeTaskModal(); });
 
+// ─── AUTH UI ───────────────────────────────────────────────
+function showLoading(show) {
+  const el = document.getElementById('loading-screen');
+  if (show) {
+    el.style.display = 'flex';
+    let w = 0;
+    const bar = document.getElementById('loading-bar');
+    const t = setInterval(() => { w = Math.min(w + 12, 85); bar.style.width = w + '%'; }, 120);
+    el._timer = t;
+  } else {
+    clearInterval(el._timer);
+    document.getElementById('loading-bar').style.width = '100%';
+    setTimeout(() => { el.style.display = 'none'; }, 300);
+  }
+}
+function showAuth() {
+  document.getElementById('auth-wall').style.display = 'flex';
+  setTimeout(() => document.getElementById('auth-email').focus(), 50);
+}
+function hideAuth() {
+  document.getElementById('auth-wall').style.display = 'none';
+}
+function setAuthMsg(msg, color) {
+  const el = document.getElementById('auth-msg');
+  el.textContent = msg;
+  el.style.color = color || 'var(--red)';
+}
+async function authSignIn() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  if (!email || !pass) { setAuthMsg('enter email and password'); return; }
+  setAuthMsg('signing in...', 'var(--text3)');
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { setAuthMsg(error.message); return; }
+  hideAuth();
+  await load();
+  await seedIfEmpty();
+}
+async function authSignUp() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  if (!email || !pass) { setAuthMsg('enter email and password'); return; }
+  if (pass.length < 6) { setAuthMsg('password must be at least 6 characters'); return; }
+  setAuthMsg('creating account...', 'var(--text3)');
+  const { error } = await sb.auth.signUp({ email, password: pass });
+  if (error) { setAuthMsg(error.message); return; }
+  setAuthMsg('check your email to confirm signup, then sign in', 'var(--green)');
+}
+async function authSignOut() {
+  await sb.auth.signOut();
+  state = { projects: [], tasks: [], activeProjectId: null };
+  document.getElementById('project-view').style.display = 'none';
+  document.getElementById('no-project').style.display = 'none';
+  showAuth();
+}
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) { hideAuth(); load().then(seedIfEmpty); }
+  if (event === 'SIGNED_OUT') { showAuth(); }
+});
+
 // ─── INIT ──────────────────────────────────────────────────
 load();
 
-// SEED DEMO DATA if first login and no data
+// ─── SEED ──────────────────────────────────────────────────
 async function seedIfEmpty() {
   if (state.projects.length) return;
   const pid = uid();
@@ -1540,75 +1600,6 @@ async function seedIfEmpty() {
   </button>
 </div>
 
-<script>
-// ─── AUTH UI ───────────────────────────────────────────────
-function showLoading(show) {
-  const el = document.getElementById('loading-screen');
-  if (show) {
-    el.style.display = 'flex';
-    let w = 0;
-    const bar = document.getElementById('loading-bar');
-    const t = setInterval(() => { w = Math.min(w + 12, 85); bar.style.width = w + '%'; }, 120);
-    el._timer = t;
-  } else {
-    clearInterval(el._timer);
-    document.getElementById('loading-bar').style.width = '100%';
-    setTimeout(() => { el.style.display = 'none'; }, 300);
-  }
-}
-function showAuth() {
-  document.getElementById('auth-wall').style.display = 'flex';
-  setTimeout(() => document.getElementById('auth-email').focus(), 50);
-}
-function hideAuth() {
-  document.getElementById('auth-wall').style.display = 'none';
-}
-function setAuthMsg(msg, color) {
-  const el = document.getElementById('auth-msg');
-  el.textContent = msg;
-  el.style.color = color || 'var(--red)';
-}
-async function authSignIn() {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-pass').value;
-  if (!email || !pass) { setAuthMsg('enter email and password'); return; }
-  setAuthMsg('signing in...', 'var(--text3)');
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { setAuthMsg(error.message); return; }
-  hideAuth();
-  await load();
-  await seedIfEmpty();
-}
-async function authSignUp() {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-pass').value;
-  if (!email || !pass) { setAuthMsg('enter email and password'); return; }
-  if (pass.length < 6) { setAuthMsg('password must be at least 6 characters'); return; }
-  setAuthMsg('creating account...', 'var(--text3)');
-  const { error } = await sb.auth.signUp({ email, password: pass });
-  if (error) { setAuthMsg(error.message); return; }
-  setAuthMsg('check your email to confirm signup, then sign in', 'var(--green)');
-}
-async function authSignOut() {
-  await sb.auth.signOut();
-  state = { projects: [], tasks: [], activeProjectId: null };
-  document.getElementById('project-view').style.display = 'none';
-  document.getElementById('no-project').style.display = 'none';
-  showAuth();
-}
-
-// Listen for auth state changes (e.g. email confirmation in another tab)
-sb.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN' && session) {
-    hideAuth();
-    load().then(seedIfEmpty);
-  }
-  if (event === 'SIGNED_OUT') {
-    showAuth();
-  }
-});
-</script>
-
 <!-- MOBILE OVERLAY -->
 <div id="mobile-overlay" onclick="closeSidebar()"></div>
 
@@ -1674,4 +1665,4 @@ window.activateProject = function(id, doSave=true) {
 };
 </script>
 </body>
-</html>     
+</html>
