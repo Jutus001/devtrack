@@ -49,6 +49,32 @@ export async function renderKanban(projectId, filters = {}, appState = {}) {
 
     _taskCache = tasks;
 
+    // Normalize legacy status values from old data imports
+    const statusMap = {
+      'todo':        'todo',
+      'Todo':        'todo',
+      'backlog':     'backlog',
+      'Backlog':     'backlog',
+      'in_progress': 'in_progress',
+      'In Progress': 'in_progress',
+      'in_review':   'in_review',
+      'In Review':   'in_review',
+      'Review':      'in_review',
+      'done':        'done',
+      'Done':        'done',
+      'blocked':     'blocked',
+      'Blocked':     'blocked',
+    };
+    const knownStatusIds = new Set(STATUSES.map(s => s.id));
+    tasks.forEach(t => {
+      if (statusMap[t.status]) {
+        t.status = statusMap[t.status];
+      } else if (!knownStatusIds.has(t.status)) {
+        // Unknown status → fall into backlog so it's visible
+        t.status = 'backlog';
+      }
+    });
+
     // Fetch checklist and subtasks for all tasks in parallel
     await Promise.all(tasks.map(async t => {
       const [checks, subs] = await Promise.all([

@@ -35,20 +35,101 @@ export function renderProjectsSidebar(projects) {
   }
 
   container.innerHTML = projects.map(p => `
-    <div class="sidebar-item project-item"
-         data-project-id="${p.id}" title="${p.name}">
+    <div class="sidebar-item project-item" data-project-id="${p.id}" title="${p.name}">
       <span class="project-dot" style="background:${p.color || '#4f8eff'}"></span>
       <span class="sidebar-label">${escHtml(p.name)}</span>
-      ${p._role === 'member' ? `<span class="badge badge-default" style="font-size:9px;padding:1px 5px">member</span>` : ''}
+      ${p._role === 'member' ? `<span class="badge badge-default" style="font-size:9px;padding:1px 5px;margin-left:auto">member</span>` : ''}
+      <button class="project-menu-btn" data-project-id="${p.id}" title="Project settings" tabindex="-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+        </svg>
+      </button>
     </div>
   `).join('');
 
   container.querySelectorAll('.project-item').forEach(el => {
-    el.addEventListener('click', () => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('.project-menu-btn')) return;
       const id = el.dataset.projectId;
       import('./app.js').then(m => m.switchProject(id));
     });
   });
+
+  container.querySelectorAll('.project-menu-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.projectId;
+      const project = projects.find(p => p.id === id);
+      if (project) openProjectContextMenu(btn, project);
+    });
+  });
+}
+
+function openProjectContextMenu(anchor, project) {
+  // Remove any existing menu
+  document.getElementById('project-ctx-menu')?.remove();
+
+  const isOwner = project._role === 'owner';
+  const menu = document.createElement('div');
+  menu.id = 'project-ctx-menu';
+  menu.style.cssText = `
+    position:fixed;z-index:2000;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r2);box-shadow:var(--shadow-xl);padding:4px;min-width:170px;
+    font-size:13px;
+  `;
+
+  const items = [
+    { label: 'Members & Invite', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, action: 'members' },
+    ...(isOwner ? [
+      { label: 'Edit Project', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`, action: 'edit' },
+      { label: 'Delete Project', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`, action: 'delete', danger: true },
+    ] : []),
+  ];
+
+  menu.innerHTML = items.map(item => `
+    <div class="ctx-menu-item${item.danger ? ' ctx-menu-danger' : ''}" data-action="${item.action}"
+         style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r1);cursor:pointer;color:${item.danger ? 'var(--red)' : 'var(--text)'};transition:background var(--t-fast)">
+      ${item.icon}
+      ${item.label}
+    </div>
+  `).join('');
+
+  document.body.appendChild(menu);
+
+  // Position near anchor
+  const rect = anchor.getBoundingClientRect();
+  const menuW = 170;
+  let left = rect.right + 4;
+  if (left + menuW > window.innerWidth - 8) left = rect.left - menuW - 4;
+  menu.style.left = `${left}px`;
+  menu.style.top = `${Math.min(rect.top, window.innerHeight - menu.offsetHeight - 8)}px`;
+
+  // Hover styles
+  menu.querySelectorAll('.ctx-menu-item').forEach(item => {
+    item.addEventListener('mouseenter', () => item.style.background = 'var(--elevated)');
+    item.addEventListener('mouseleave', () => item.style.background = '');
+  });
+
+  // Action handlers
+  menu.addEventListener('click', e => {
+    const item = e.target.closest('[data-action]');
+    if (!item) return;
+    closeMenu();
+    const action = item.dataset.action;
+    if (action === 'members') openMembersModal(project);
+    if (action === 'edit')    openEditProjectModal(project);
+    if (action === 'delete')  import('./projects.js').then(m => m.deleteProjectWithConfirm(project));
+  });
+
+  // Close on outside click
+  const closeMenu = () => {
+    menu.remove();
+    document.removeEventListener('click', outsideHandler, true);
+  };
+  const outsideHandler = e => {
+    if (!menu.contains(e.target)) closeMenu();
+  };
+  setTimeout(() => document.addEventListener('click', outsideHandler, true), 0);
 }
 
 // ── Create project modal ─────────────────────────────────────
