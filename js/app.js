@@ -30,6 +30,8 @@ export const AppState = {
 };
 
 // ── Initialization ───────────────────────────────────────────
+let _isBooting = false;
+
 async function init() {
   showLoading(true);
   
@@ -42,7 +44,12 @@ async function init() {
       AppState.user = session.user;
       AppState.userId = session.user.id;
       hideAuthScreen();
-      await bootApp();
+      
+      if (!_isBooting) {
+        _isBooting = true;
+        await bootApp(session.user);
+        _isBooting = false;
+      }
     } else {
       AppState.user = null;
       AppState.userId = null;
@@ -176,10 +183,10 @@ function handlePaletteAction(action, id) {
   }
 }
 
-async function bootApp() {
+async function bootApp(user) {
   showLoading(true);
   try {
-    await initTopbarAvatar();
+    await initTopbarAvatar(user);
     const projects = await loadProjectsSidebar();
     
     if (projects.length > 0) {

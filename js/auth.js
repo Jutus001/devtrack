@@ -251,8 +251,8 @@ function refreshTopbarAvatar(name, color) {
   }
 }
 
-export async function initTopbarAvatar() {
-  const { data: { user } } = await supabase.auth.getUser();
+export async function initTopbarAvatar(userArg = null) {
+  const user = userArg || (await supabase.auth.getUser()).data.user;
   if (!user) return;
   const profile = await getProfile(user.id);
   refreshTopbarAvatar(profile?.display_name || user.email, profile?.avatar_color || '#4f8eff');
