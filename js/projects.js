@@ -205,7 +205,6 @@ export async function deleteProjectWithConfirm(project) {
   try {
     await deleteProject(project.id);
     showToast('Project deleted', 'success');
-    AppState.currentProjectId = null;
     await loadProjectsSidebar();
     import('./app.js').then(m => m.showDashboard());
   } catch (err) { showToast(err.message, 'error'); }

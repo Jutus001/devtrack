@@ -27,13 +27,16 @@ const DragState = {
 let _profileMap = {};
 let _taskCache = [];
 let _filters = {};
+let _projectId = null;
 
 // ── Main render ──────────────────────────────────────────────
 export async function renderKanban(projectId, filters = {}, appState = {}) {
   _filters = filters;
+  _projectId = projectId;
   const board = document.getElementById('kanban-board');
   if (!board) return;
 
+  board.style.cssText = ''; // Reset any inline styles set by other views
   board.innerHTML = `<div class="empty-state" style="width:100%;margin-top:60px">
     <div class="animate-spin" style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%"></div>
   </div>`;
@@ -265,10 +268,13 @@ function completeDrop(e) {
   const taskId = DragState.taskId;
   const task = _taskCache.find(t => t.id === taskId);
 
+  // Capture position before cleanup resets DragState
+  const capturedIndex = DragState.currentIndex;
+
   // Spring animation on ghost
   if (DragState.ghost) {
     const targetCards = Array.from(targetCol.querySelectorAll('.task-card:not(.dragging)'));
-    const insertIdx = DragState.currentIndex;
+    const insertIdx = capturedIndex;
     let targetY;
 
     if (targetCards.length === 0 || insertIdx >= targetCards.length) {
@@ -291,7 +297,7 @@ function completeDrop(e) {
 
     // Gather all cards in target column (excluding dragged)
     const cards = Array.from(targetCol.querySelectorAll('.task-card'));
-    const insertIdx = Math.min(DragState.currentIndex, cards.length);
+    const insertIdx = Math.min(capturedIndex, cards.length);
 
     // Build new order for the column
     const colTasks = _taskCache.filter(t => t.status === newStatus && t.id !== taskId);
@@ -307,10 +313,10 @@ function completeDrop(e) {
       await reorderTasks(colTasks);
 
       // Refresh the board to reflect DB state
-      await renderKanban(AppState.currentProjectId, _filters);
+      await renderKanban(_projectId, _filters);
     } catch (err) {
       showToast('Failed to move task', 'error');
-      await renderKanban(AppState.currentProjectId, _filters);
+      await renderKanban(_projectId, _filters);
     }
   }, 280);
 }

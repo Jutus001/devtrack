@@ -11,8 +11,9 @@ import { showToast } from './ui.js';
 // TABLE VIEW
 // ══════════════════════════════════════════════════════════════
 export async function renderTableView(projectId, filters = {}, appState = {}) {
-  const container = document.getElementById('view-container');
+  const container = document.getElementById('kanban-board');
   if (!container) return;
+  container.style.cssText = 'display:block;height:100%;overflow:hidden;padding:0';
   container.innerHTML = `<div style="height:100%;overflow:auto;background:var(--surface)">
     <table class="task-table" id="task-table-el">
       <thead>
@@ -164,9 +165,9 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
 // UPCOMING VIEW
 // ══════════════════════════════════════════════════════════════
 export async function renderUpcomingView(projectId, filters = {}, appState = {}) {
-  const container = document.getElementById('view-container');
+  const container = document.getElementById('kanban-board');
   if (!container) return;
-
+  container.style.cssText = 'display:block;height:100%;overflow:hidden;padding:0';
   container.innerHTML = `<div style="height:100%;overflow-y:auto" id="upcoming-scroll">
     <div class="empty-state" style="padding:60px">
       <div class="animate-spin" style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%"></div>
@@ -253,9 +254,9 @@ function buildUpcomingRow(task) {
 // ROADMAP VIEW
 // ══════════════════════════════════════════════════════════════
 export async function renderRoadmapView(projectId, appState = {}) {
-  const container = document.getElementById('view-container');
+  const container = document.getElementById('kanban-board');
   if (!container) return;
-
+  container.style.cssText = 'display:block;height:100%;overflow:hidden;padding:0';
   container.innerHTML = `<div id="roadmap-view">
     <div class="empty-state">
       <div class="animate-spin" style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%"></div>

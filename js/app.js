@@ -97,16 +97,56 @@ export async function switchProject(projectId) {
   AppState.currentProjectId = projectId;
   AppState.currentProject = AppState.projects.find(p => p.id === projectId);
   localStorage.setItem('devtrack_active_pid', projectId);
-  
+
   // Update sidebar UI
   document.querySelectorAll('.project-item').forEach(el => {
     el.classList.toggle('active', el.dataset.projectId === projectId);
   });
 
+  ensureProjectViewStructure();
   document.getElementById('no-project').style.display = 'none';
   document.getElementById('project-view').style.display = 'flex';
-  
+
   await refreshCurrentView();
+}
+
+// Restore #view-container HTML structure if non-kanban views replaced it
+function ensureProjectViewStructure() {
+  const container = document.getElementById('view-container');
+  if (!container) return;
+  if (!document.getElementById('project-view')) {
+    container.innerHTML = `
+      <div id="no-project" class="empty-state" style="display:none;height:100%">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+        <h3>Welcome to DevTrack</h3>
+        <p>Select a project from the sidebar or create a new one to get started with your tasks.</p>
+      </div>
+      <div id="project-view" style="display:none;height:100%;flex-direction:column;overflow-y:auto">
+        <div id="project-header" style="padding:var(--s4);border-bottom:1px solid var(--border);background:var(--surface)">
+          <div style="display:flex;gap:16px;margin-top:8px">
+            <div id="left-off-sticky" style="flex:1;background:var(--amber-dim);border:1px solid var(--amber);padding:12px;border-radius:var(--r2);position:relative">
+              <div style="font-size:10px;font-family:var(--font-mono);color:var(--amber);text-transform:uppercase;margin-bottom:4px;font-weight:700;display:flex;justify-content:space-between">
+                <span>Where I left off</span>
+                <button id="btn-save-wilo" style="background:none;border:none;color:var(--amber);cursor:pointer;font-size:10px;font-weight:700">SAVE</button>
+              </div>
+              <div id="left-off-text" contenteditable="true" style="font-size:13px;color:var(--text);outline:none;min-height:20px">Click to add a note...</div>
+            </div>
+            <div id="decision-log-box" style="flex:1;background:var(--elevated);border:1px solid var(--border);padding:12px;border-radius:var(--r2);cursor:pointer">
+              <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;font-weight:700">Decision Log (Markdown)</div>
+              <div style="font-size:12px;color:var(--text-muted)">Keep track of architectural decisions and notes. Click to open.</div>
+            </div>
+          </div>
+        </div>
+        <div id="kanban-board"></div>
+      </div>
+    `;
+    // Re-bind notes/decisions events after restoring structure
+    document.getElementById('btn-save-wilo')?.addEventListener('click', () => {
+      const text = document.getElementById('left-off-text').innerText;
+      saveLeftOff(text);
+    });
+    document.getElementById('decision-log-box')?.addEventListener('click', openDecisionLogModal);
+  }
 }
 
 export async function refreshCurrentView() {
@@ -148,6 +188,9 @@ export async function refreshCurrentView() {
 
 export function showDashboard() {
   AppState.currentProjectId = null;
+  AppState.currentProject = null;
+  // Restore the view-container structure if a non-kanban view replaced it
+  ensureProjectViewStructure();
   document.getElementById('project-view').style.display = 'none';
   document.getElementById('no-project').style.display = 'flex';
 }
@@ -157,6 +200,11 @@ export function setView(view) {
   document.querySelectorAll('.view-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.view === view);
   });
+  ensureProjectViewStructure();
+  if (AppState.currentProjectId) {
+    document.getElementById('project-view').style.display = 'flex';
+    document.getElementById('no-project').style.display = 'none';
+  }
   refreshCurrentView();
 }
 
@@ -200,6 +248,15 @@ function toggleNotificationsPanel() {
   if (panel.classList.contains('hidden')) {
     panel.classList.remove('hidden');
     loadNotifications();
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', function closeNotifs(e) {
+        if (!panel.contains(e.target) && !e.target.closest('#btn-notifications')) {
+          panel.classList.add('hidden');
+          document.removeEventListener('click', closeNotifs);
+        }
+      });
+    }, 0);
   } else {
     panel.classList.add('hidden');
   }
@@ -264,6 +321,7 @@ export async function togglePinTask(taskId) {
 function renderFocusStrip(project) {
   const strip = document.getElementById('focus-strip');
   if (!strip) return;
+  if (!project) { strip.classList.add('hidden'); return; }
 
   const focusIds = project.today_focus || [];
   if (focusIds.length === 0) {

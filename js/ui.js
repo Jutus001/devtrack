@@ -144,6 +144,7 @@ export function showLoading(show) {
       `;
       document.body.appendChild(loader);
     }
+    loader.classList.remove('hidden'); // ensure not hidden by utility class
     setTimeout(() => loader.classList.add('visible'), 10);
   } else if (loader) {
     loader.classList.remove('visible');
