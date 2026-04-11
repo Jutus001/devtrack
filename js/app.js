@@ -63,6 +63,255 @@ async function init() {
   setupCommandPalette();
 }
 
+async function bootApp(user) {
+  showLoading(true);
+  try {
+    await initTopbarAvatar(user);
+    const projects = await loadProjectsSidebar();
+    AppState.projects = projects;
+    
+    if (projects.length > 0) {
+      const lastId = localStorage.getItem('devtrack_active_pid');
+      const targetId = projects.find(p => p.id === lastId)?.id || projects[0].id;
+      await switchProject(targetId);
+    } else {
+      showDashboard();
+    }
+  } catch (err) {
+    console.error('Boot error:', err);
+    showToast('Failed to initialize app', 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ── Navigation & Views ───────────────────────────────────────
+export async function switchProject(projectId) {
+  AppState.currentProjectId = projectId;
+  AppState.currentProject = AppState.projects.find(p => p.id === projectId);
+  localStorage.setItem('devtrack_active_pid', projectId);
+  
+  // Update sidebar UI
+  document.querySelectorAll('.project-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.projectId === projectId);
+  });
+
+  document.getElementById('no-project').style.display = 'none';
+  document.getElementById('project-view').style.display = 'flex';
+  
+  await refreshCurrentView();
+}
+
+export async function refreshCurrentView() {
+  if (!AppState.currentProjectId) return;
+  
+  showLoading(true);
+  try {
+    // 1. Sync Project Info
+    const project = AppState.projects.find(p => p.id === AppState.currentProjectId);
+    if (project) {
+      AppState.currentProject = project;
+      document.getElementById('proj-title-text').textContent = project.name;
+      renderProjectNotes(project);
+    }
+
+    // 2. Load Tasks into State
+    AppState.tasks = await loadTasks(AppState.currentProjectId, AppState.filters);
+
+    // 3. Render Focus Strip
+    renderFocusStrip(project);
+
+    // 4. Render Active View
+    if (AppState.activeView === 'kanban') {
+      const { renderKanban } = await import('./kanban.js');
+      await renderKanban(AppState.currentProjectId, AppState.filters);
+    } else if (AppState.activeView === 'table') {
+      await renderTableView(AppState.currentProjectId, AppState.filters);
+    } else if (AppState.activeView === 'upcoming') {
+      await renderUpcomingView(AppState.currentProjectId, AppState.filters);
+    } else if (AppState.activeView === 'roadmap') {
+      await renderRoadmapView(AppState.currentProjectId);
+    }
+  } catch (err) {
+    console.error('View refresh error:', err);
+  } finally {
+    showLoading(false);
+  }
+}
+
+export function showDashboard() {
+  AppState.currentProjectId = null;
+  document.getElementById('project-view').style.display = 'none';
+  document.getElementById('no-project').style.display = 'flex';
+}
+
+export function setView(view) {
+  AppState.activeView = view;
+  document.querySelectorAll('.view-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.view === view);
+  });
+  refreshCurrentView();
+}
+
+// ── Event Handlers ───────────────────────────────────────────
+function setupGlobalEvents() {
+  // Topbar
+  document.getElementById('topbar-avatar')?.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleProfilePanel();
+  });
+
+  document.getElementById('btn-theme-toggle')?.addEventListener('click', toggleTheme);
+
+  // Sidebar
+  document.getElementById('btn-new-project')?.addEventListener('click', openCreateProjectModal);
+  document.getElementById('btn-join-project')?.addEventListener('click', openJoinProjectModal);
+
+  document.getElementById('btn-notifications')?.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleNotificationsPanel();
+  });
+
+  document.getElementById('btn-mark-all-read')?.addEventListener('click', markAllNotificationsRead);
+
+  // Notes & Decisions
+  document.getElementById('btn-save-wilo')?.addEventListener('click', () => {
+    const text = document.getElementById('left-off-text').innerText;
+    saveLeftOff(text);
+  });
+  document.getElementById('decision-log-box')?.addEventListener('click', openDecisionLogModal);
+
+  // Tabs
+  document.querySelectorAll('.view-tab').forEach(tab => {
+    tab.addEventListener('click', () => setView(tab.dataset.view));
+  });
+}
+
+// ── Notifications ────────────────────────────────────────────
+function toggleNotificationsPanel() {
+  const panel = document.getElementById('notifications-panel');
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden');
+    loadNotifications();
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+
+async function loadNotifications() {
+  const container = document.getElementById('notif-list');
+  try {
+    const { getNotifications } = await import('./supabase.js');
+    const notifs = await getNotifications();
+    if (notifs.length === 0) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:13px">No notifications</div>';
+      return;
+    }
+    container.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
+        <div class="notif-item-body">
+          <div class="notif-item-msg">${n.message}</div>
+          <div class="notif-item-time">${new Date(n.created_at).toLocaleString()}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function markAllNotificationsRead() {
+  try {
+    const { markAllNotificationsRead: apiMarkRead } = await import('./supabase.js');
+    await apiMarkRead();
+    loadNotifications();
+    showToast('All marked as read');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ── Focus & Notes ────────────────────────────────────────────
+function renderFocusStrip(project) {
+  const strip = document.getElementById('focus-strip');
+  if (!strip) return;
+
+  const focusIds = project.today_focus || [];
+  if (focusIds.length === 0) {
+    strip.classList.add('hidden');
+    return;
+  }
+
+  const focusTasks = AppState.tasks.filter(t => focusIds.includes(t.id));
+  if (focusTasks.length === 0) {
+    strip.classList.add('hidden');
+    return;
+  }
+
+  strip.classList.remove('hidden');
+  strip.innerHTML = `
+    <div class="focus-strip-label">Today's Focus</div>
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">
+      ${focusTasks.map(t => `
+        <div class="focus-task-pill" data-id="${t.id}">
+          <span class="fp-dot"></span>
+          <span>${t.title}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  strip.querySelectorAll('.focus-task-pill').forEach(pill => {
+    pill.onclick = () => {
+      const task = focusTasks.find(t => t.id === pill.dataset.id);
+      if (task) import('./collaboration.js').then(m => m.openTaskDetail(task));
+    };
+  });
+}
+
+function renderProjectNotes(project) {
+  const el = document.getElementById('left-off-text');
+  if (el) {
+    el.innerText = project.where_i_left_off || 'Click to add a note...';
+  }
+}
+
+async function saveLeftOff(text) {
+  if (!AppState.currentProjectId) return;
+  try {
+    const { updateProject } = await import('./supabase.js');
+    await updateProject(AppState.currentProjectId, { where_i_left_off: text });
+    // Update local cache
+    const p = AppState.projects.find(proj => proj.id === AppState.currentProjectId);
+    if (p) p.where_i_left_off = text;
+    showToast('Sticky note saved', 'success');
+  } catch (err) { console.error(err); }
+}
+
+async function openDecisionLogModal() {
+  if (!AppState.currentProject) return;
+  const { openModal } = await import('./ui.js');
+  const { updateProject } = await import('./supabase.js');
+
+  const content = AppState.currentProject.decision_log || '';
+
+  openModal({
+    id: 'modal-decision-log',
+    title: 'Decision Log — ' + AppState.currentProject.name,
+    size: 'lg',
+    body: `
+      <div class="form-group">
+        <label class="form-label">Markdown Content</label>
+        <textarea id="decision-log-editor" class="form-input" style="height:400px;font-family:var(--font-mono);font-size:13px;line-height:1.6">${content}</textarea>
+      </div>
+    `,
+    primaryLabel: 'Save Log',
+    onPrimary: async () => {
+      const newLog = document.getElementById('decision-log-editor').value;
+      await updateProject(AppState.currentProjectId, { decision_log: newLog });
+      AppState.currentProject.decision_log = newLog;
+      showToast('Decision log updated', 'success');
+      return true;
+    }
+  });
+}
+
 // ── Command Palette ──────────────────────────────────────────
 function setupCommandPalette() {
   window.addEventListener('keydown', e => {
@@ -127,10 +376,7 @@ async function showCommandPalette() {
 
 async function renderPaletteResults(query) {
   const container = document.getElementById('palette-results');
-  if (!query) {
-    // Show defaults
-    return; 
-  }
+  if (!query) return;
 
   const results = [];
   
@@ -181,243 +427,6 @@ function handlePaletteAction(action, id) {
     const task = AppState.tasks.find(t => t.id === id);
     if (task) import('./collaboration.js').then(m => m.openTaskDetail(task));
   }
-}
-
-async function bootApp(user) {
-  showLoading(true);
-  try {
-    await initTopbarAvatar(user);
-    const projects = await loadProjectsSidebar();
-    
-    if (projects.length > 0) {
-      const lastId = localStorage.getItem('devtrack_active_pid');
-      const targetId = projects.find(p => p.id === lastId)?.id || projects[0].id;
-      await switchProject(targetId);
-    } else {
-      showDashboard();
-    }
-  } catch (err) {
-    console.error('Boot error:', err);
-    showToast('Failed to initialize app', 'error');
-  } finally {
-    showLoading(false);
-  }
-}
-
-// ── Navigation & Views ───────────────────────────────────────
-export async function switchProject(projectId) {
-  AppState.currentProjectId = projectId;
-  AppState.currentProject = AppState.projects.find(p => p.id === projectId);
-  localStorage.setItem('devtrack_active_pid', projectId);
-  
-  // Update sidebar UI
-  document.querySelectorAll('.project-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.projectId === projectId);
-  });
-
-  document.getElementById('no-project').style.display = 'none';
-  document.getElementById('project-view').style.display = 'flex';
-  
-  await refreshCurrentView();
-}
-
-export async function refreshCurrentView() {
-  if (!AppState.currentProjectId) return;
-  
-  showLoading(true);
-  try {
-    const project = AppState.projects.find(p => p.id === AppState.currentProjectId);
-    if (project) {
-      document.getElementById('proj-title-text').textContent = project.name;
-      renderFocusStrip(project);
-      renderProjectNotes(project);
-    }
-
-    if (AppState.activeView === 'kanban') {
-      const { renderKanban } = await import('./kanban.js');
-      await renderKanban(AppState.currentProjectId, AppState.filters);
-    } else if (AppState.activeView === 'table') {
-      await renderTableView(AppState.currentProjectId, AppState.filters);
-    } else if (AppState.activeView === 'upcoming') {
-      await renderUpcomingView(AppState.currentProjectId, AppState.filters);
-    } else if (AppState.activeView === 'roadmap') {
-      await renderRoadmapView(AppState.currentProjectId);
-    }
-  } catch (err) {
-    console.error('View refresh error:', err);
-  } finally {
-    showLoading(false);
-  }
-}
-
-export function showDashboard() {
-  AppState.currentProjectId = null;
-  document.getElementById('project-view').style.display = 'none';
-  document.getElementById('no-project').style.display = 'flex';
-}
-
-export function setView(view) {
-  AppState.activeView = view;
-  document.querySelectorAll('.view-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.view === view);
-  });
-  refreshCurrentView();
-}
-
-// ── Event Handlers ───────────────────────────────────────────
-function setupGlobalEvents() {
-  // Topbar
-  document.getElementById('topbar-avatar')?.addEventListener('click', e => {
-    e.stopPropagation();
-    toggleProfilePanel();
-  });
-
-  document.getElementById('btn-theme-toggle')?.addEventListener('click', toggleTheme);
-
-  // Sidebar
-  document.getElementById('btn-new-project')?.addEventListener('click', openCreateProjectModal);
-  document.getElementById('btn-join-project')?.addEventListener('click', openJoinProjectModal);
-
-  document.getElementById('btn-notifications')?.addEventListener('click', e => {
-    e.stopPropagation();
-    toggleNotificationsPanel();
-  });
-
-  document.getElementById('btn-mark-all-read')?.addEventListener('click', markAllNotificationsRead);
-
-  // Notes & Decisions
-  const leftOffEl = document.getElementById('left-off-text');
-  if (leftOffEl) {
-    leftOffEl.addEventListener('blur', () => saveLeftOff(leftOffEl.innerText));
-  }
-  document.getElementById('decision-log-box')?.addEventListener('click', openDecisionLogModal);
-
-  // Tabs
-  document.querySelectorAll('.view-tab').forEach(tab => {
-    tab.addEventListener('click', () => setView(tab.dataset.view));
-  });
-}
-
-function toggleNotificationsPanel() {
-  const panel = document.getElementById('notifications-panel');
-  if (panel.classList.contains('hidden')) {
-    panel.classList.remove('hidden');
-    loadNotifications();
-  } else {
-    panel.classList.add('hidden');
-  }
-}
-
-async function loadNotifications() {
-  const container = document.getElementById('notif-list');
-  try {
-    const { getNotifications } = await import('./supabase.js');
-    const notifs = await getNotifications();
-    if (notifs.length === 0) {
-      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:13px">No notifications</div>';
-      return;
-    }
-    container.innerHTML = notifs.map(n => `
-      <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
-        <div class="notif-item-body">
-          <div class="notif-item-msg">${n.message}</div>
-          <div class="notif-item-time">${new Date(n.created_at).toLocaleString()}</div>
-        </div>
-      </div>
-    `).join('');
-  } catch (err) { console.error(err); }
-}
-
-async function markAllNotificationsRead() {
-  try {
-    const { markAllNotificationsRead: apiMarkRead } = await import('./supabase.js');
-    await apiMarkRead();
-    loadNotifications();
-    showToast('All marked as read');
-  } catch (err) { showToast(err.message, 'error'); }
-}
-
-function renderFocusStrip(project) {
-  const strip = document.getElementById('focus-strip');
-  if (!strip) return;
-
-  const focusIds = project.today_focus || [];
-  if (focusIds.length === 0) {
-    strip.classList.add('hidden');
-    return;
-  }
-
-  const focusTasks = AppState.tasks.filter(t => focusIds.includes(t.id));
-  if (focusTasks.length === 0) {
-    strip.classList.add('hidden');
-    return;
-  }
-
-  strip.classList.remove('hidden');
-  strip.innerHTML = `
-    <div class="focus-strip-label">Today's Focus</div>
-    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">
-      ${focusTasks.map(t => `
-        <div class="focus-task-pill" data-id="${t.id}">
-          <span class="fp-dot"></span>
-          <span>${t.title}</span>
-        </div>
-      `).join('')}
-    </div>
-  `;
-
-  strip.querySelectorAll('.focus-task-pill').forEach(pill => {
-    pill.onclick = () => {
-      const task = focusTasks.find(t => t.id === pill.dataset.id);
-      if (task) import('./collaboration.js').then(m => m.openTaskDetail(task));
-    };
-  });
-}
-
-function renderProjectNotes(project) {
-  const el = document.getElementById('left-off-text');
-  if (el) {
-    el.innerText = project.where_i_left_off || 'Click to add a note...';
-  }
-}
-
-async function saveLeftOff(text) {
-  if (!AppState.currentProjectId) return;
-  try {
-    const { updateProject } = await import('./supabase.js');
-    await updateProject(AppState.currentProjectId, { where_i_left_off: text });
-    // Update local cache
-    const p = AppState.projects.find(proj => proj.id === AppState.currentProjectId);
-    if (p) p.where_i_left_off = text;
-  } catch (err) { console.error(err); }
-}
-
-async function openDecisionLogModal() {
-  if (!AppState.currentProject) return;
-  const { openModal } = await import('./ui.js');
-  const { updateProject } = await import('./supabase.js');
-
-  const content = AppState.currentProject.decision_log || '';
-
-  openModal({
-    id: 'modal-decision-log',
-    title: 'Decision Log — ' + AppState.currentProject.name,
-    size: 'lg',
-    body: `
-      <div class="form-group">
-        <label class="form-label">Markdown Content</label>
-        <textarea id="decision-log-editor" class="form-input" style="height:400px;font-family:var(--font-mono);font-size:13px">${content}</textarea>
-      </div>
-    `,
-    primaryLabel: 'Save Log',
-    onPrimary: async () => {
-      const newLog = document.getElementById('decision-log-editor').value;
-      await updateProject(AppState.currentProjectId, { decision_log: newLog });
-      AppState.currentProject.decision_log = newLog;
-      showToast('Decision log updated', 'success');
-      return true;
-    }
-  });
 }
 
 // Kick off

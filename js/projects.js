@@ -10,13 +10,12 @@ import {
 } from './supabase.js';
 import { showToast, openModal, closeModal, confirm } from './ui.js';
 import { initials } from './auth.js';
-import { AppState } from './app.js';
 
 // ── Project list (sidebar) ───────────────────────────────────
 export async function loadProjectsSidebar() {
   try {
     const projects = await getProjects();
-    AppState.projects = projects;
+    // We update AppState in app.js after calling this
     renderProjectsSidebar(projects);
     return projects;
   } catch (err) {
@@ -36,7 +35,7 @@ export function renderProjectsSidebar(projects) {
   }
 
   container.innerHTML = projects.map(p => `
-    <div class="sidebar-item project-item ${AppState.currentProjectId === p.id ? 'active' : ''}"
+    <div class="sidebar-item project-item"
          data-project-id="${p.id}" title="${p.name}">
       <span class="project-dot" style="background:${p.color || '#4f8eff'}"></span>
       <span class="sidebar-label">${escHtml(p.name)}</span>
@@ -439,53 +438,6 @@ export async function openSprintsModal(projectId) {
       openSprintsModal(projectId);
     });
   }, 50);
-}
-
-// ── Decision log ─────────────────────────────────────────────
-export async function openDecisionLog(project) {
-  openModal({
-    id: 'modal-decision-log',
-    title: 'Decision Log',
-    body: `
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
-        Freeform notes about decisions made on this project.
-      </div>
-      <textarea class="form-input" id="dl-text" rows="12" placeholder="# Decision Log\n\n- Chose React over Vue because..."
-        style="font-family:var(--font-mono);font-size:12px;line-height:1.7">${escHtml(project.decision_log || '')}</textarea>
-    `,
-    size: 'md',
-    primaryLabel: 'Save',
-    onPrimary: async () => {
-      const text = document.getElementById('dl-text').value;
-      await updateProject(project.id, { decision_log: text });
-      showToast('Decision log saved', 'success');
-      return true;
-    }
-  });
-}
-
-// ── Where I Left Off ─────────────────────────────────────────
-export async function openWhereILeftOff(project) {
-  openModal({
-    id: 'modal-wilo',
-    title: 'Where I Left Off',
-    body: `
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
-        One pinned sticky note per project. What were you working on?
-      </div>
-      <textarea class="form-input" id="wilo-text" rows="6" placeholder="Working on auth refactor. Need to fix the token refresh logic in auth.js…"
-        style="font-family:var(--font-mono);font-size:12px;line-height:1.7">${escHtml(project.where_i_left_off || '')}</textarea>
-    `,
-    size: 'sm',
-    primaryLabel: 'Save',
-    onPrimary: async () => {
-      const text = document.getElementById('wilo-text').value;
-      await updateProject(project.id, { where_i_left_off: text });
-      showToast('Saved', 'success');
-      import('./app.js').then(m => m.refreshCurrentView());
-      return true;
-    }
-  });
 }
 
 // ── Utilities ────────────────────────────────────────────────

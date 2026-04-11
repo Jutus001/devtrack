@@ -94,7 +94,10 @@
             
             <div style="display:flex;gap:16px;margin-top:8px">
               <div id="left-off-sticky" style="flex:1;background:var(--amber-dim);border:1px solid var(--amber);padding:12px;border-radius:var(--r2);position:relative">
-                <div style="font-size:10px;font-family:var(--font-mono);color:var(--amber);text-transform:uppercase;margin-bottom:4px;font-weight:700">Where I left off</div>
+                <div style="font-size:10px;font-family:var(--font-mono);color:var(--amber);text-transform:uppercase;margin-bottom:4px;font-weight:700;display:flex;justify-content:space-between">
+                  <span>Where I left off</span>
+                  <button id="btn-save-wilo" style="background:none;border:none;color:var(--amber);cursor:pointer;font-size:10px;font-weight:700">SAVE</button>
+                </div>
                 <div id="left-off-text" contenteditable="true" style="font-size:13px;color:var(--text);outline:none;min-height:20px">Click to add a note...</div>
               </div>
               <div id="decision-log-box" style="flex:1;background:var(--elevated);border:1px solid var(--border);padding:12px;border-radius:var(--r2);cursor:pointer">

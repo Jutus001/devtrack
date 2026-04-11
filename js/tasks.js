@@ -9,7 +9,6 @@ import {
 import { showToast, openModal, closeModal, confirm } from './ui.js';
 import { initials } from './auth.js';
 import { escHtml } from './projects.js';
-import { AppState } from './app.js';
 
 // ── Task type config ──────────────────────────────────────────
 export const TASK_TYPES = {
@@ -39,7 +38,6 @@ export const PRIORITIES = [
 export async function loadTasks(projectId, filters = {}) {
   try {
     const tasks = await getTasks(projectId, filters);
-    AppState.tasks = tasks;
     return tasks;
   } catch (err) {
     showToast('Failed to load tasks', 'error');
