@@ -58,9 +58,12 @@
   padding: 6px;
   border-radius: var(--r2);
   line-height: 1;
+  color: var(--text-muted);
 }
 
-.btn-icon svg { width: 16px; height: 16px; }
+.btn-icon:hover { color: var(--text); }
+
+.btn-icon svg { width: 16px; height: 16px; display: block; }
 
 /* ══════════════════════════════════════════
    FORM CONTROLS
@@ -507,6 +510,22 @@ textarea.form-input {
   font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 600;
+}
+
+.modal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r2);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.modal-close-btn:hover {
+  background: var(--elevated);
+  color: var(--text);
 }
 
 .modal-body {
@@ -1312,8 +1331,8 @@ textarea.form-input {
   justify-content: center;
   z-index: 9999;
   opacity: 0;
-  transition: opacity var(--t-base);
-  pointer-events: none;
+  pointer-events: none !important; /* never blocks clicks, even if stuck */
+  transition: opacity 0.2s ease;
 }
 
 #global-loader.visible {

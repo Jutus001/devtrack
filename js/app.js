@@ -9,7 +9,7 @@ import {
 import { loadProjectsSidebar, openCreateProjectModal, openJoinProjectModal } from './projects.js';
 import { loadTasks } from './tasks.js';
 import { renderTableView, renderUpcomingView, renderRoadmapView } from './views.js';
-import { showLoading, showToast } from './ui.js';
+import { showLoading, forceHideLoader, showToast } from './ui.js';
 
 // ── Global State ─────────────────────────────────────────────
 export const AppState = {
@@ -31,34 +31,63 @@ export const AppState = {
 
 // ── Initialization ───────────────────────────────────────────
 let _isBooting = false;
+let _hasBooted = false;
 
 async function init() {
   showLoading(true);
-  
+
   // 1. Theme
   initTheme(localStorage.getItem('devtrack_theme'));
 
-  // 2. Auth Listener
+  // 2. Restore session immediately from cache — no waiting for network
+  const { data: { session: existingSession } } = await supabase.auth.getSession();
+  if (existingSession) {
+    AppState.user = existingSession.user;
+    AppState.userId = existingSession.user.id;
+    hideAuthScreen();
+    _isBooting = true;
+    _hasBooted = false;
+    await bootApp(existingSession.user);
+    _isBooting = false;
+    _hasBooted = true;
+  } else {
+    showAuthScreen();
+  }
+  forceHideLoader(); // always guaranteed to clear the loader
+
+  // 3. Auth listener — ONLY reacts to actual sign-in / sign-out
+  //    TOKEN_REFRESHED and INITIAL_SESSION fire on tab focus — ignore them
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if (session) {
+    if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') return;
+
+    if (event === 'SIGNED_IN' && session && !_hasBooted && !_isBooting) {
       AppState.user = session.user;
       AppState.userId = session.user.id;
       hideAuthScreen();
-      
-      if (!_isBooting) {
-        _isBooting = true;
-        await bootApp(session.user);
-        _isBooting = false;
-      }
-    } else {
+      _isBooting = true;
+      await bootApp(session.user);
+      _isBooting = false;
+      _hasBooted = true;
+    } else if (event === 'SIGNED_OUT') {
       AppState.user = null;
       AppState.userId = null;
+      _isBooting = false;
+      _hasBooted = false;
       showAuthScreen();
     }
-    showLoading(false);
   });
 
-  // 3. Global UI events
+  // 4. When tab regains focus: kill loader immediately, then silently refresh
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      forceHideLoader();
+      if (_hasBooted && AppState.currentProjectId) {
+        refreshCurrentView(true);
+      }
+    }
+  });
+
+  // 5. Global UI events
   setupGlobalEvents();
   setupCommandPalette();
 }
@@ -106,6 +135,7 @@ export async function switchProject(projectId) {
   ensureProjectViewStructure();
   document.getElementById('no-project').style.display = 'none';
   document.getElementById('project-view').style.display = 'flex';
+  document.getElementById('btn-add-task').style.display = '';
 
   await refreshCurrentView();
 }
@@ -149,10 +179,10 @@ function ensureProjectViewStructure() {
   }
 }
 
-export async function refreshCurrentView() {
+export async function refreshCurrentView(silent = false) {
   if (!AppState.currentProjectId) return;
-  
-  showLoading(true);
+
+  if (!silent) showLoading(true);
   try {
     // 1. Sync Project Info
     const project = AppState.projects.find(p => p.id === AppState.currentProjectId);
@@ -189,10 +219,10 @@ export async function refreshCurrentView() {
 export function showDashboard() {
   AppState.currentProjectId = null;
   AppState.currentProject = null;
-  // Restore the view-container structure if a non-kanban view replaced it
   ensureProjectViewStructure();
   document.getElementById('project-view').style.display = 'none';
   document.getElementById('no-project').style.display = 'flex';
+  document.getElementById('btn-add-task').style.display = 'none';
 }
 
 export function setView(view) {
@@ -221,6 +251,12 @@ function setupGlobalEvents() {
   // Sidebar
   document.getElementById('btn-new-project')?.addEventListener('click', openCreateProjectModal);
   document.getElementById('btn-join-project')?.addEventListener('click', openJoinProjectModal);
+
+  document.getElementById('btn-add-task')?.addEventListener('click', () => {
+    if (AppState.currentProjectId) {
+      import('./tasks.js').then(m => m.openCreateTaskModal(AppState.currentProjectId));
+    }
+  });
 
   document.getElementById('btn-notifications')?.addEventListener('click', e => {
     e.stopPropagation();

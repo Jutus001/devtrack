@@ -51,7 +51,9 @@ export function openModal(options) {
     <div class="modal modal-${options.size || 'sm'}">
       <div class="modal-header">
         <div class="modal-title">${options.title || 'Modal'}</div>
-        <button class="modal-close-btn">&times;</button>
+        <button class="modal-close-btn" title="Close (Esc)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
       <div class="modal-body">${options.body || ''}</div>
       <div class="modal-footer">
@@ -63,15 +65,16 @@ export function openModal(options) {
   `;
 
   document.body.appendChild(modal);
-  
-  // Show it (trigger animation)
-  setTimeout(() => modal.classList.add('open'), 10);
 
   // Wire events
   const close = () => {
-    modal.classList.remove('open');
-    setTimeout(() => modal.remove(), 300);
+    modal.remove();
+    document.removeEventListener('keydown', escHandler);
+    if (options.onClose) options.onClose();
   };
+
+  const escHandler = (e) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', escHandler);
 
   modal.querySelector('.modal-close-btn').onclick = close;
   modal.querySelector(`#${options.id}-close`).onclick = close;
@@ -99,22 +102,21 @@ export function openModal(options) {
 
   // Focus first input
   const firstInput = modal.querySelector('input, select, textarea');
-  if (firstInput) setTimeout(() => firstInput.focus(), 100);
+  if (firstInput) setTimeout(() => firstInput.focus(), 50);
 
   return modal;
 }
 
 export function closeModal(id) {
   const modal = document.getElementById(id);
-  if (modal) {
-    modal.classList.remove('open');
-    setTimeout(() => modal.remove(), 300);
-  }
+  if (modal) modal.remove();
 }
 
 // ── Confirmation ─────────────────────────────────────────────
 export function confirm(title, message) {
   return new Promise((resolve) => {
+    let resolved = false;
+    const done = (val) => { if (!resolved) { resolved = true; resolve(val); } };
     openModal({
       id: 'modal-confirm',
       title,
@@ -122,39 +124,43 @@ export function confirm(title, message) {
       size: 'xs',
       primaryLabel: 'Confirm',
       closeLabel: 'Cancel',
-      onPrimary: () => { resolve(true); return true; }
-    }).querySelector('.modal-close-btn').onclick = () => { resolve(false); closeModal('modal-confirm'); };
-    
-    document.getElementById('modal-confirm-close').onclick = () => { resolve(false); closeModal('modal-confirm'); };
+      onPrimary: () => { done(true); return true; },
+      onClose: () => done(false)
+    });
   });
 }
 
 // ── Loader ───────────────────────────────────────────────────
-// Ref counter so nested showLoading(true/false) calls don't race
-let _loadingCount = 0;
+// Simple depth counter. Loader only hides when ALL callers are done.
+let _depth = 0;
+let _safetyTimer = null;
 
 export function showLoading(show) {
-  let loader = document.getElementById('global-loader');
-  if (!loader) {
-    loader = document.createElement('div');
-    loader.id = 'global-loader';
-    loader.innerHTML = `
-      <div class="loader-content">
-        <div class="loader-spinner"></div>
-        <div class="loader-text">dev<span>track</span></div>
-      </div>
-    `;
-    document.body.appendChild(loader);
-  }
+  const loader = document.getElementById('global-loader');
+  if (!loader) return;
 
   if (show) {
-    _loadingCount++;
-    loader.classList.remove('hidden');
+    _depth++;
     loader.classList.add('visible');
-  } else {
-    _loadingCount = Math.max(0, _loadingCount - 1);
-    if (_loadingCount === 0) {
-      loader.classList.remove('visible');
+    // Safety: hide after 5s from the FIRST show, regardless of later calls
+    if (!_safetyTimer) {
+      _safetyTimer = setTimeout(() => hideLoader(loader), 5000);
     }
+  } else {
+    _depth = Math.max(0, _depth - 1);
+    if (_depth === 0) hideLoader(loader);
   }
+}
+
+export function forceHideLoader() {
+  _depth = 0;
+  const loader = document.getElementById('global-loader');
+  if (loader) hideLoader(loader);
+}
+
+function hideLoader(loader) {
+  _depth = 0;
+  clearTimeout(_safetyTimer);
+  _safetyTimer = null;
+  loader.classList.remove('visible');
 }

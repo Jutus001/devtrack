@@ -58,14 +58,14 @@ export async function getProjects() {
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
-  if (e1) throw e1;
+  if (e1) { console.error('[DevTrack] projects query failed:', e1.message, e1); throw e1; }
 
   // Get joined projects
   const { data: memberRows, error: e2 } = await supabase
     .from('project_members')
     .select('project_id, role')
     .eq('user_id', user.id);
-  if (e2) throw e2;
+  if (e2) { console.error('[DevTrack] project_members query failed:', e2.message, e2); throw e2; }
 
   let joined = [];
   if (memberRows && memberRows.length > 0) {
@@ -170,7 +170,7 @@ export async function getTasks(projectId, filters = {}) {
     .from('tasks')
     .select('*')
     .eq('project_id', projectId)
-    .eq('archived', false)
+    .or('archived.eq.false,archived.is.null')
     .order('position', { ascending: true })
     .order('created_at', { ascending: false });
 

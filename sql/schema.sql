@@ -1,12 +1,11 @@
 -- Run this entire file in Supabase SQL Editor
--- DevTrack full schema: new tables + ALTER statements for existing tables
--- Safe to re-run: uses IF NOT EXISTS and DO $$ blocks
+-- DevTrack full schema — safe to re-run (IF NOT EXISTS + DO $$ blocks)
 
 -- ============================================================
--- 1. EXTEND EXISTING TABLES
+-- 1. CORE TABLES (create if missing)
 -- ============================================================
 
--- profiles table (stores display name, avatar color, theme preference)
+-- profiles
 CREATE TABLE IF NOT EXISTS profiles (
   id          uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name text,
@@ -20,7 +19,77 @@ DROP POLICY IF EXISTS "profiles_self" ON profiles;
 CREATE POLICY "profiles_self" ON profiles
   USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
--- Add new columns to existing projects table
+-- projects
+CREATE TABLE IF NOT EXISTS projects (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id          uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name             text NOT NULL,
+  description      text DEFAULT '',
+  stack            text DEFAULT '',
+  color            text DEFAULT '#4f8eff',
+  status           text DEFAULT 'active' CHECK (status IN ('active','paused','archived')),
+  join_code        char(6) UNIQUE,
+  decision_log     text DEFAULT '',
+  where_i_left_off text DEFAULT '',
+  today_focus      uuid[] DEFAULT '{}',
+  created_at       timestamptz DEFAULT now(),
+  updated_at       timestamptz DEFAULT now()
+);
+
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "projects_owner" ON projects;
+DROP POLICY IF EXISTS "projects_member_read" ON projects;
+DROP POLICY IF EXISTS "projects_member_update" ON projects;
+DROP POLICY IF EXISTS "projects_select" ON projects;
+DROP POLICY IF EXISTS "projects_insert" ON projects;
+DROP POLICY IF EXISTS "projects_update" ON projects;
+DROP POLICY IF EXISTS "projects_delete" ON projects;
+-- Single SELECT policy: owner or member (no self-referencing recursion)
+CREATE POLICY "projects_select" ON projects FOR SELECT
+  USING (auth.uid() = user_id OR id IN (
+    SELECT project_id FROM project_members WHERE user_id = auth.uid()
+  ));
+CREATE POLICY "projects_insert" ON projects FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "projects_update" ON projects FOR UPDATE
+  USING (auth.uid() = user_id);
+CREATE POLICY "projects_delete" ON projects FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- tasks (create if your existing system doesn't have it yet)
+CREATE TABLE IF NOT EXISTS tasks (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id  uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title       text NOT NULL,
+  description text DEFAULT '',
+  task_type   text DEFAULT 'feature' CHECK (task_type IN ('feature','bug','chore','research','design')),
+  status      text DEFAULT 'todo' CHECK (status IN ('todo','in_progress','in_review','done','blocked')),
+  priority    text DEFAULT 'medium' CHECK (priority IN ('critical','high','medium','low')),
+  tags        text[] DEFAULT '{}',
+  archived    boolean DEFAULT false,
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "tasks_project_access" ON tasks;
+CREATE POLICY "tasks_project_access" ON tasks
+  USING (
+    user_id = auth.uid() OR
+    project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+    project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+  )
+  WITH CHECK (
+    user_id = auth.uid() OR
+    project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid())
+  );
+
+-- ============================================================
+-- 2. ADD MISSING COLUMNS TO EXISTING TABLES
+-- ============================================================
+
+-- Add new columns to projects (if table already existed without them)
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='join_code') THEN
     ALTER TABLE projects ADD COLUMN join_code char(6) UNIQUE;
@@ -41,6 +110,21 @@ DO $$ BEGIN
     ALTER TABLE projects ADD COLUMN today_focus uuid[] DEFAULT '{}';
   END IF;
 END $$;
+
+-- Ensure tasks table has RLS enabled and a working policy
+-- (safe if already set — DROP POLICY IF EXISTS handles duplicates)
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "tasks_project_access" ON tasks;
+CREATE POLICY "tasks_project_access" ON tasks
+  USING (
+    user_id = auth.uid() OR
+    project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+    project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+  )
+  WITH CHECK (
+    user_id = auth.uid() OR
+    project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid())
+  );
 
 -- Add new columns to existing tasks table
 DO $$ BEGIN
@@ -86,7 +170,7 @@ DO $$ BEGIN
 END $$;
 
 -- ============================================================
--- 2. NEW TABLES
+-- 3. SUPPORTING TABLES
 -- ============================================================
 
 -- project_members: collaboration join codes
@@ -100,22 +184,23 @@ CREATE TABLE IF NOT EXISTS project_members (
 );
 ALTER TABLE project_members ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "members_visible_to_project_members" ON project_members;
-CREATE POLICY "members_visible_to_project_members" ON project_members
-  USING (
-    project_id IN (
-      SELECT project_id FROM project_members WHERE user_id = auth.uid()
-    )
-  );
 DROP POLICY IF EXISTS "members_insert_self" ON project_members;
-CREATE POLICY "members_insert_self" ON project_members
-  FOR INSERT WITH CHECK (user_id = auth.uid());
 DROP POLICY IF EXISTS "members_delete_owner" ON project_members;
-CREATE POLICY "members_delete_owner" ON project_members
-  FOR DELETE USING (
+DROP POLICY IF EXISTS "members_select" ON project_members;
+DROP POLICY IF EXISTS "members_insert" ON project_members;
+DROP POLICY IF EXISTS "members_delete" ON project_members;
+-- No self-reference: visible if you are the member OR you own the project
+CREATE POLICY "members_select" ON project_members FOR SELECT
+  USING (
     user_id = auth.uid() OR
-    project_id IN (
-      SELECT project_id FROM project_members WHERE user_id = auth.uid() AND role = 'owner'
-    )
+    project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+  );
+CREATE POLICY "members_insert" ON project_members FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+CREATE POLICY "members_delete" ON project_members FOR DELETE
+  USING (
+    user_id = auth.uid() OR
+    project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
   );
 
 -- milestones
@@ -263,7 +348,7 @@ CREATE POLICY "notifications_self" ON notifications
   USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 
 -- ============================================================
--- 3. INDEXES
+-- 4. INDEXES
 -- ============================================================
 
 CREATE INDEX IF NOT EXISTS idx_tasks_project_id     ON tasks(project_id);
@@ -288,7 +373,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_task        ON activity(task_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user   ON notifications(user_id, read);
 
 -- ============================================================
--- 4. HELPER FUNCTION: generate join code
+-- 5. HELPER FUNCTIONS & TRIGGERS
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION generate_join_code()

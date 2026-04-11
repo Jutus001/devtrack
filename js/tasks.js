@@ -11,12 +11,20 @@ import { initials } from './auth.js';
 import { escHtml } from './projects.js';
 
 // ── Task type config ──────────────────────────────────────────
+const ICON = {
+  feature:  `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  bug:      `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 10h4m12 0h-4M6 15h12M8 19h8"/><line x1="12" y1="12" x2="12" y2="21"/></svg>`,
+  chore:    `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  research: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>`,
+  design:   `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+};
+
 export const TASK_TYPES = {
-  feature:     { label: 'Feature',     icon: '✦', color: 'var(--accent)' },
-  bug:         { label: 'Bug',         icon: '⚠', color: 'var(--red)' },
-  chore:       { label: 'Chore',       icon: '⚙', color: 'var(--text-dim)' },
-  research:    { label: 'Research',    icon: '🔍', color: 'var(--purple)' },
-  design:      { label: 'Design',      icon: '◈',  color: 'var(--amber)' },
+  feature:  { label: 'Feature',  svg: ICON.feature,  color: 'var(--accent)' },
+  bug:      { label: 'Bug',      svg: ICON.bug,      color: 'var(--red)' },
+  chore:    { label: 'Chore',    svg: ICON.chore,    color: 'var(--text-dim)' },
+  research: { label: 'Research', svg: ICON.research, color: 'var(--purple)' },
+  design:   { label: 'Design',   svg: ICON.design,   color: 'var(--amber)' },
 };
 
 export const STATUSES = [
@@ -259,7 +267,7 @@ function buildTaskForm({ milestones = [], sprints = [], memberProfiles = [], def
           <label class="form-label">Type</label>
           <select class="form-input form-select" id="tf-type">
             ${Object.entries(TASK_TYPES).map(([id, t]) =>
-              `<option value="${id}" ${d.task_type === id ? 'selected' : ''}>${t.icon} ${t.label}</option>`
+              `<option value="${id}" ${d.task_type === id ? 'selected' : ''}>${t.label}</option>`
             ).join('')}
           </select>
         </div>
@@ -476,7 +484,7 @@ export async function renderTaskCard(task, opts = {}) {
       ${task.description ? `<div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-bottom:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(task.description)}</div>` : ''}
 
       <div class="card-meta">
-        <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color}">${typeConf.icon} ${typeConf.label}</span>
+        <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color}">${typeConf.svg} ${typeConf.label}</span>
         <span class="badge badge-default" data-priority="${task.priority}">
           <span class="priority-dot"></span>${priorityConf.label}
         </span>
@@ -529,11 +537,13 @@ export function renderFilterBar(filters, onChange) {
         ${Object.entries(TASK_TYPES).map(([id, t]) =>
           `<option value="${id}" ${filters.task_type === id ? 'selected' : ''}>${t.label}</option>`
         ).join('')}
+
       </select>
 
       <label class="filter-chip ${filters.is_blocker ? 'active' : ''}" id="filter-blocker">
         <input type="checkbox" style="display:none" ${filters.is_blocker ? 'checked' : ''} />
-        ⚠ Blockers only
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Blockers
       </label>
 
       ${Object.keys(filters).some(k => filters[k] && k !== 'status') ? `

@@ -24,7 +24,9 @@ export async function openTaskDetail(task) {
           <button id="btn-pin-task" class="btn btn-ghost btn-icon btn-sm" title="Pin to Today's Focus">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><polyline points="16.5 9.4 16.5 16.01"/><polyline points="10 12.8 10 19.41"/></svg>
           </button>
-          <button class="panel-close-btn" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px">&times;</button>
+          <button class="panel-close-btn" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--r2);color:var(--text-muted);background:none;border:none;cursor:pointer;transition:background var(--t-fast),color var(--t-fast)" title="Close (Esc)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -87,8 +89,13 @@ export async function openTaskDetail(task) {
 
   panel.classList.add('open');
 
-  // Wire events
-  panel.querySelector('.panel-close-btn').onclick = () => panel.classList.remove('open');
+  // Wire close
+  const closePanel = () => panel.classList.remove('open');
+  panel.querySelector('.panel-close-btn').onclick = closePanel;
+
+  // ESC closes the panel
+  const escHandler = (e) => { if (e.key === 'Escape') { closePanel(); document.removeEventListener('keydown', escHandler); } };
+  document.addEventListener('keydown', escHandler);
   
   panel.querySelector('#btn-pin-task').onclick = async () => {
     const { togglePinTask } = await import('./app.js');
@@ -181,7 +188,9 @@ async function loadSubtasks(taskId) {
           <span style="font-size:13px">${escHtml(s.title)}</span>
           ${s.tag ? `<span class="tag-pill" style="font-size:10px">${s.tag}</span>` : ''}
         </div>
-        <button class="btn btn-ghost btn-sm" data-id="${s.id}" data-action="toggle">✓</button>
+        <button class="btn btn-ghost btn-sm" data-id="${s.id}" data-action="toggle" title="Toggle done">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
       </div>
     `).join('');
 
