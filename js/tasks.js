@@ -33,6 +33,7 @@ export const STATUSES = [
   { id: 'in_review',  label: 'In Review',   color: '#a855f7' },
   { id: 'done',       label: 'Done',         color: '#3ecf8e' },
   { id: 'blocked',    label: 'Blocked',      color: '#f05151' },
+  { id: 'backlog',    label: 'Backlog',      color: '#55555c' },
 ];
 
 export const PRIORITIES = [
@@ -134,7 +135,8 @@ export async function openCreateTaskModal(projectId, defaultStatus = 'todo', def
           tags,
           assignees,
           bug_fields: bugFields,
-          notes: {}
+          notes: document.getElementById('tf-notes').value.trim() || null,
+          prompt: document.getElementById('tf-prompt').value.trim() || null,
         });
         showToast('Task created', 'success');
         if (typeof defaultFields.onCreated === 'function') defaultFields.onCreated(task);
@@ -218,7 +220,9 @@ export async function openEditTaskModal(task) {
           sprint_id: document.getElementById('tf-sprint').value || null,
           tags,
           assignees,
-          bug_fields: bugFields
+          bug_fields: bugFields,
+          notes: document.getElementById('tf-notes').value.trim() || null,
+          prompt: document.getElementById('tf-prompt').value.trim() || null,
         });
 
         await logActivity(task.project_id, task.id, 'task_updated', { title });
@@ -352,6 +356,11 @@ function buildTaskForm({ milestones = [], sprints = [], memberProfiles = [], def
         </label>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="tf-notes" rows="3" placeholder="Internal notes, context, links…">${escHtml(d.notes || '')}</textarea>
+      </div>
+
       <!-- Bug fields (shown only when type = bug) -->
       <div id="tf-bug-section" style="display:none;border-top:1px solid var(--border);padding-top:14px">
         <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:12px">Bug Report Fields</div>
@@ -373,6 +382,12 @@ function buildTaskForm({ milestones = [], sprints = [], memberProfiles = [], def
             <input class="form-input" id="tf-bug-env" value="${escHtml(bf.environment || '')}" placeholder="OS, browser, version…" />
           </div>
         </div>
+      </div>
+
+      <!-- AI Prompt section -->
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px">AI Prompt</div>
+        <textarea class="form-input" id="tf-prompt" rows="5" placeholder="Paste your AI prompt, system instructions, or context here…" style="font-family:var(--font-mono);font-size:12px;line-height:1.6;resize:vertical">${escHtml(d.prompt || '')}</textarea>
       </div>
     </div>
   `;
@@ -501,6 +516,10 @@ export async function renderTaskCard(task, opts = {}) {
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           ${githubHtml}
           ${task.task_type === 'bug' ? '<span class="badge badge-red" style="padding:2px 4px;font-size:9px">BUG FIELDS</span>' : ''}
+          ${task.prompt ? `<span class="badge" style="padding:2px 5px;font-size:9px;background:var(--accent-dim,#4f8eff22);color:var(--accent)" title="Has AI Prompt">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            PROMPT
+          </span>` : ''}
         </div>
         ${assigneeHtml}
       </div>

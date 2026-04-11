@@ -1,0 +1,373 @@
+id,user_id,project_id,title,task_type,status,priority,description,prompt,tags,notes,archived,created_at,updated_at,assignees,due_date,is_blocker,github_url,milestone_id,sprint_id,position,bug_fields
+2ee67df5-13ec-4f25-838b-9e892ad2546b,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,System Design Re-coloring,Idea,Todo,Medium,,"Hey Claude,
+Apply SAP Fiori color palette to my entire Vue app — everything: layouts, components, pages, modals, forms, tables, buttons, inputs, dropdowns, badges, alerts.
+Color Palette
+Light Mode
+Table
+Element	Hex
+Page background	#f7f7f7
+Sidebar/Header	#edeff0
+Cards/Modals	#ffffff
+Borders	#d9d9d9
+Text	#32363a
+Secondary text	#6a6d70
+Hover	#d9d9d9
+Dark Mode
+Table
+Element	Hex
+Page background	#1c2228
+Sidebar/Cards	#232a31
+Elevated (modals, hover)	#29313a
+Borders	#3a4552
+Text	#fafafa
+Secondary text	#d3d7d9
+Replacement Map
+Table
+Replace this	With this
+bg-white	bg-[#ffffff] dark:bg-[#232a31]
+bg-gray-50, bg-gray-100	bg-[#f7f7f7] dark:bg-[#1c2228]
+bg-gray-200	bg-[#edeff0] dark:bg-[#232a31]
+dark:bg-gray-800	dark:bg-[#232a31]
+dark:bg-gray-900	dark:bg-[#1c2228]
+border-gray-200, border-gray-300	border-[#d9d9d9] dark:border-[#3a4552]
+text-gray-900	text-[#32363a] dark:text-[#fafafa]
+text-gray-500, text-gray-600, text-gray-700	text-[#6a6d70] dark:text-[#d3d7d9]
+Corner Radius Rules
+Add overflow-hidden to ALL cards, modals, and containers that have rounded corners. This ensures borders clip properly and corners look clean.
+Table
+Element	Radius	Notes
+Main cards/containers	rounded-xl (12px)	+ overflow-hidden
+Modals/dialogs	rounded-xl (12px)	+ overflow-hidden
+Buttons	rounded-lg (8px)	Standard
+Inputs	rounded-md (6px)	Standard
+Small badges/tags	rounded-full or rounded-md	Context dependent
+Pattern for every card/modal:
+vue
+Copy
+<div class=""overflow-hidden rounded-xl bg-[#ffffff] dark:bg-[#232a31] border border-[#d9d9d9] dark:border-[#3a4552]"">
+  <!-- content -->
+</div>
+Scope
+plain
+Copy
+resources/js/Layouts/
+resources/js/Components/
+resources/js/Pages/
+Rules
+Change: All background, border, text colors, and corner radius with proper overflow-hidden. Every UI element.
+Do NOT change: Logic, layout structure, spacing, amber accent #FDB022, green/red status colors, chart colors.
+Process
+Start with resources/js/Layouts/ — do layout files first
+Then components, then pages
+Go file by file — do not batch
+Use Read → Edit → confirm pattern
+Report: list every file changed",[],[],false,2026-04-05 17:03:01.445+00,2026-04-07 20:58:41.649+00,[],,false,,,,0,{}
+2ef39068-52e2-481f-8394-9a7a9fb70070,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,FIX DOCKER SETUP,Fix,Backlog,Medium,We need to fix docker for setting up everything right running all seeders etc,,[],[],false,2026-04-07 21:46:59.774+00,2026-04-08 14:03:03.318+00,[],,false,,,,0,{}
+30d956c2-5745-4be7-8b1a-600878465103,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,POS Full Responsivity,Feature,Todo,Medium,"I need serious help with the full responsivity of the POS page and all connected modals. Requirements:
+- The top navbar/topbar of the POS must always stay visible on screen on all screen sizes
+- BUT when a modal opens (like settings modal or transaction modal) hide the POS navbar completely so only the modal shows
+- On small screens the pricing mode text in the topbar must be properly centered, clearly visible, good design not broken
+- Make sure everything on the POS is reachable on different screen sizes
+- Fix the manual pricing button/text make it smaller
+- Go through the full POS layout and make it properly responsive",,[],[],false,2026-04-05 17:14:19.47+00,2026-04-08 14:04:14.161+00,[],,false,,,,0,{}
+375dac4f-7159-49ac-a0a9-54726a381c16,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Onboarding PDF,Fix,Todo,Medium,"When a tenant is created, automatically generate a secure random 8-character password for the admin user. In the tenant table in the admin dashboard, add an Onboarding Document icon/button in the Actions column. When clicked it should generate a professional printable A4 PDF with: SaaS logo and branding at top, tenant company name, login URL, admin email, temporary auto-generated password, note to change password after first login, quick start steps (login → change password → add services → start using system), support contact info (email, phone, WhatsApp), plan type, tenant creation date. Design must be clean modern professional, proper spacing and sections, optimized for A4 printing, looks good digitally and printed. Install whatever PDF package is needed like barryvdh/laravel-dompdf",,[],[],false,2026-04-05 17:12:00.547+00,2026-04-07 20:58:37.941+00,[],,false,,,,0,{}
+3aa85a00-bbbc-45ed-87bc-fa07c36b1f9b,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,"Audit language implementation across tenant pages
+",Idea,Backlog,Medium,,"I have already implemented language/translation in this project. Go through every single file inside resources/js/Pages/Tenant and check if all user-facing text is using the translation function. Check all pages and their connected modals, dropdowns, buttons, placeholders, alerts, validation messages, tooltips — everything. Report which files are missing translations and which strings are still hardcoded in English, then fix them all",[],[],false,2026-04-05 17:36:37.017+00,2026-04-08 14:04:31.016+00,[],,false,,,,0,{}
+3aab32b1-b073-4f80-b4b5-4f99adfb40d6,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Client card — full redesign + responsivity,Feature,In Progress,Medium,,"Go to resources/js/Pages/Tenant/ClientCards/ClientTransactionIndex.vue — I want a full redesign of this page. Keep every single existing feature and function exactly as it is, do not remove anything. I just want a much better modern clean design with full responsivity across all screen sizes. Make it look great, professional, well spaced, easy to read and use on both desktop and mobile. Pay attention to the transactions section, modals, and all interactive elements — everything must work perfectly and look great",[],[],false,2026-04-05 17:22:16.806+00,2026-04-10 17:31:33.976+00,[],,false,,,,0,{}
+40091360-fd3b-4220-a5d4-1a803e97b091,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,POS client search — fix loader/performance,Bug,Todo,Medium,,"On the POS page when I open the client selection and search for a client or vehicle, there is a loader showing. Check if this loader is just a fake animation or if it is actually waiting for a real request. If it is just an animation with no real loading happening remove it. If it is a real request find out why it is slow and optimize it to make the search faster and more responsive",[],[],false,2026-04-05 17:27:28.412+00,2026-04-05 17:27:34.575+00,[],,false,,,,0,{}
+4384b2aa-39e7-42ed-8c5a-3d0f3f3e18b6,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Download Fix,Bug,Todo,Medium,"The PDF download is being blocked by the browser as insecure. Instead of direct download, open the PDF in a new tab so the browser doesn't block it. Keep the temporary password still visible on the page, no problem from security. Keep it simple, no complex stuff",,[],[],false,2026-04-05 17:12:48.46+00,2026-04-08 14:04:07.977+00,[],,false,,,,0,{}
+458d504a-cf62-4b7c-9d70-b5f56b3de7d4,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Add user roles & permissions,Feature,Review,Medium,,"I want to implement a full multi-tenant user roles and permissions system. Before writing any code do the following:
+
+1. ANALYSE FIRST — Read the full database schema, all migrations, all existing models, controllers and routes. Check if there is any existing user/roles/permissions logic already started or partially implemented. Report what you find before doing anything.
+
+2. PLAN — Based on what you find, plan the full implementation:
+- Users table changes needed (if any)
+- Roles table (admin, mechanic, cashier, receptionist etc)
+- Permissions table (per page, per action — view only, edit, input, full access)
+- Many to many relationships
+- Middleware for route protection
+- How roles integrate with the multi-tenant system (each tenant has their own users and roles, completely isolated)
+
+3. CLIENT LOGIN QUESTION — Right now all clients exist in the system but none can login. We want to add a future feature where some clients can login. Should we add a login_access boolean column to the clients table now so we are prepared? Recommend the best approach and wait for my approval before doing anything about this.
+
+4. APPROVAL — Present the full plan clearly, list every change you will make to the database and codebase, wait for me to approve before writing a single line of code.
+
+5. IMPLEMENT AFTER APPROVAL —
+- Backend: migrations, models, relationships, middleware, policies, all with maximum security
+- Frontend: Users management page accessible only to tenant admin, where you can create users, assign roles, set permissions per page (view only / edit / full access / no access)
+- Make sure regular users cannot access the users management page
+- All permission checks must happen on both frontend and backend, never trust frontend alone
+- Everything must work correctly in the multi-tenant architecture, users and roles must be scoped to their tenant only, no cross-tenant data leaks ever",[],[],false,2026-04-05 17:30:46.816+00,2026-04-09 21:42:24.441+00,[],,false,,,,0,{}
+463c48d5-dfc3-4885-ab38-0369ae4cf729,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,billing page,Feature,Todo,High,"billing page for the tenant admin, he can see how many invoices did he pay what version of the app what type of subsrciton does he owe anything to us, and also modal and notificaiton system for payment when they are due etc",,[],[],false,2026-04-08 22:09:29.991+00,2026-04-08 22:09:31.339+00,[],,false,,,,0,{}
+5a9f0e50-85fd-46dd-a112-17897e983e99,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Add SaaS package/plan system,Feature,In Progress,Low,,"Add a SaaS package and plan system to the admin side. I want to be able to create plans with different features and limits, assign a plan to each tenant, and enforce those limits in the app",[],[],false,2026-04-05 17:31:55.88+00,2026-04-10 17:46:13.505+00,[],,false,,,,0,{}
+5fc062ad-eaa4-4269-bc94-0fd4e694d97f,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Mechanic Modal,Bug,Todo,High,,"Go to resources/js/Pages/Tenant/Mechanic — on the mechanics page index I click the add new mechanic button and nothing opens. I expect a modal to open so I can fill in mechanic details and create them. Debug the whole page, find why the modal is not opening and fix it completely. Check the controller, routes, and the vue file",[],[],false,2026-04-05 17:13:08.288+00,2026-04-08 14:04:10.743+00,[],,false,,,,0,{}
+6480f4ad-c4a1-4f1b-a363-5f4dae607352,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,"Appointment form — validation, client & mechanic selection",Feature,Todo,Medium,,"On the appointment page I need 3 things fixed:
+
+1. Date and time validation — prevent selecting a date before today, and if today is selected only show hours from current time onwards. Validate on both frontend and backend.
+
+2. Client selection — instead of a plain text placeholder, add a proper client search/select like the POS system has. The user can search and select an existing client, or type a name and it saves as a walk-in client using the walk-in client ID, same logic as the POS.
+
+3. Mechanic selection — instead of a plain text placeholder, add a proper dropdown to select a mechanic from the existing mechanics in the system.",[],[],false,2026-04-05 17:18:30.017+00,2026-04-08 08:16:58.515+00,[],,false,,,,0,{}
+6d938ac6-3650-40ab-8560-d3459844a257,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Edit product name in POS modal,Feature,Todo,Medium,"On the POS page, when I open the product modal to add a product, I want to be able to edit the product name directly from there. Add an option inside the product modal that lets me edit/rename the product name inline. It should be simple and clean, fits the existing modal design. Make sure the change saves properly to the database and reflects everywhere the product name is shown",,[],[],false,2026-04-05 17:16:53.164+00,2026-04-08 14:04:17.973+00,[],,false,,,,0,{}
+71d341d5-11b6-41de-b8e9-30711b8b1a03,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Claude Security,Idea,Backlog,Medium,,"Hey Claude,
+Act as my Security Expert and perform a comprehensive security audit of my entire Vue.js / Laravel application. Identify vulnerabilities, misconfigurations, and security best practice violations.
+1. Authentication & Authorization Audit
+Check for:
+[ ] Password policies (min length, complexity, rotation)
+[ ] Brute force protection (rate limiting on login)
+[ ] Session management (timeout, invalidation, secure cookies)
+[ ] JWT/token security (expiration, refresh strategy, storage)
+[ ] Multi-factor authentication implementation
+[ ] Role-based access control (RBAC) enforcement
+[ ] Route guards — are all protected routes actually protected?
+[ ] API endpoint authorization — can users access other users' data?
+[ ] Password reset flow security (token expiration, email verification)
+[ ] ""Remember me"" functionality security
+Files to review:
+plain
+Copy
+app/Http/Controllers/AuthController.php
+app/Http/Middleware/Authenticate.php
+app/Http/Middleware/RoleMiddleware.php
+config/auth.php
+config/session.php
+resources/js/Pages/Auth/
+2. Input Validation & Sanitization
+Check for:
+[ ] SQL injection vulnerabilities (raw queries, unparameterized statements)
+[ ] XSS vulnerabilities (unescaped output, v-html misuse)
+[ ] CSRF protection on all forms
+[ ] Mass assignment vulnerabilities (fillable/guarded properties)
+[ ] File upload validation (type, size, extension, content verification)
+[ ] Command injection risks
+[ ] LDAP/NoSQL injection risks
+[ ] Path traversal in file handling
+Files to review:
+plain
+Copy
+app/Http/Controllers/**/*.php
+app/Http/Requests/**/*.php
+resources/js/Components/Forms/
+resources/js/Pages/**/*Form*.vue
+3. API Security
+Check for:
+[ ] API authentication (tokens, OAuth, Sanctum)
+[ ] Rate limiting on all endpoints
+[ ] CORS configuration — is it too permissive?
+[ ] API versioning strategy
+[ ] Sensitive data exposure in responses (passwords, tokens, PII)
+[ ] Error handling — do errors leak stack traces or sensitive info?
+[ ] Pagination limits to prevent DoS
+[ ] Throttling on expensive operations
+Files to review:
+plain
+Copy
+routes/api.php
+app/Http/Controllers/API/
+app/Http/Middleware/ThrottleRequests.php
+config/cors.php
+4. Data Protection
+Check for:
+[ ] Encryption at rest (database, files)
+[ ] Encryption in transit (HTTPS/TLS enforcement)
+[ ] Sensitive data in logs (passwords, credit cards, SSN)
+[ ] Database credentials security (.env, not hardcoded)
+[ ] API keys and secrets management
+[ ] Personal data handling (GDPR compliance)
+[ ] Data retention policies
+[ ] Secure deletion of data
+Files to review:
+plain
+Copy
+.env
+.env.example
+config/database.php
+config/app.php
+storage/logs/
+app/Models/**/*.php
+5. Vue.js / Frontend Security
+Check for:
+[ ] XSS via v-html (should use v-text or {{ }})
+[ ] Dangerous innerHTML usage
+[ ] Eval() or new Function() usage
+[ ] Prototype pollution vulnerabilities
+[ ] LocalStorage/SessionStorage for sensitive data (tokens, PII)
+[ ] Insecure direct object references (IDOR) in API calls
+[ ] Client-side validation bypass (always validate server-side)
+[ ] npm package vulnerabilities (outdated, malicious)
+[ ] Content Security Policy (CSP) headers
+Files to review:
+plain
+Copy
+resources/js/**/*.vue
+resources/js/**/*.js
+package.json
+vite.config.js
+6. Server & Infrastructure Security
+Check for:
+[ ] Debug mode enabled in production (APP_DEBUG=true)
+[ ] Error display to users (APP_DEBUG, display_errors)
+[ ] Server version exposure (X-Powered-By headers)
+[ ] Directory listing enabled
+[ ] File permissions (storage, bootstrap/cache)
+[ ] .env file accessible from web
+[ ] Admin panels exposed without IP restriction
+[ ] Backup files exposed (.sql, .zip, .tar.gz)
+Files to review:
+plain
+Copy
+.env
+public/.htaccess
+nginx.conf / apache config
+storage/
+bootstrap/cache/
+7. Dependency & Supply Chain Security
+Check for:
+[ ] Outdated Composer packages with known CVEs
+[ ] Outdated npm packages with known CVEs
+[ ] Abandoned/unmaintained dependencies
+[ ] Typosquatting packages (malicious names similar to popular ones)
+[ ] License compliance for commercial use
+Commands to run:
+bash
+Copy
+composer audit
+npm audit
+8. Business Logic & Access Control
+Check for:
+[ ] IDOR — can User A access User B's data by changing ID in URL?
+[ ] Privilege escalation — can regular user become admin?
+[ ] Insecure direct object references in all CRUD operations
+[ ] Missing authorization checks in controllers
+[ ] Tenant isolation — can tenants see each other's data?
+[ ] Admin functionality properly restricted
+Test scenarios:
+plain
+Copy
+- Change user ID in URL → should 403
+- Change tenant ID in request → should 403
+- Access admin route as user → should 403
+- Modify hidden form fields → should validate server-side
+9. Session & Cookie Security
+Check for:
+[ ] Secure flag on cookies (HTTPS only)
+[ ] HttpOnly flag on session cookies
+[ ] SameSite attribute (Strict or Lax)
+[ ] Session fixation protection
+[ ] Session hijacking protection
+[ ] Concurrent session handling
+Files to review:
+plain
+Copy
+config/session.php
+app/Http/Kernel.php
+10. Logging & Monitoring
+Check for:
+[ ] Security events logged (failed logins, access denied)
+[ ] No sensitive data in logs
+[ ] Log integrity (tamper-proof storage)
+[ ] Log retention policy
+[ ] Real-time alerting for suspicious activity
+Deliverable Format
+For each finding, provide:
+Table
+Severity	Category	Location	Issue	Recommendation	Code Example
+Critical/High/Medium/Low	Auth/Input/API/etc.	File:Line	Description	How to fix	Before/After code
+Summary:
+Total vulnerabilities by severity
+Quick wins (easy fixes with high impact)
+Architecture changes needed
+Compliance gaps (GDPR, SOC2, etc.)
+Process
+Start with configuration files (.env, config/)
+Review authentication system
+Audit all controllers for authorization
+Check Vue components for XSS
+Review API routes and middleware
+Run dependency scans
+Document findings with specific file paths and line numbers
+Be thorough. Flag even questionable patterns. Better safe than sorry.",[],[],false,2026-04-05 17:28:03.318+00,2026-04-05 17:28:05.898+00,[],,false,,,,0,{}
+75800185-a677-46ed-b562-4e46d943ea8f,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Tenant Login,Fix,Backlog,Medium,,"I created a tenant in the admin dashboard but I never set a password for it. I don't know what the password is. Check how tenant and admin user passwords are handled in this project — is it hardcoded, auto generated, or what? Find it, explain it, and make sure when a tenant is created the admin user gets a proper password that I can see",[],[],false,2026-04-05 17:11:09.38+00,2026-04-08 14:03:16.819+00,[],,false,,,,0,{}
+7d55caa2-3bb5-404e-8810-24ca1577acc6,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Security Hardening,Feature,Backlog,Medium,"- Rate limit login attempts
+- Add code resend cooldown",,[],[],false,2026-04-05 17:07:09.492+00,2026-04-05 21:35:14.561+00,[],,false,,,,0,{}
+9d98fb54-49c8-4daa-b19f-4f42b66e8a91,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Documents languages responisivyt,Feature,Todo,Medium,,,[],[],false,2026-04-08 21:43:14.801+00,2026-04-08 21:43:14.801+00,[],,false,,,,0,{}
+a996708d-5279-483a-b31f-759b48c7154b,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,POS Types Column,Bug,Todo,Medium,,"On the POS page where I display the products, I have a column called all types. The text is all stacked on top of each other and there is not enough space. Make the column bigger and responsive. Also based on the language — in English just show the label as simply ""Types"", make it clean and clear",[],[],false,2026-04-05 17:13:54.738+00,2026-04-08 08:16:31.053+00,[],,false,,,,0,{}
+a9c736d1-2958-40e6-b375-d0971f3c3607,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,backdoor to all tenant accounts as superadmin,Feature,Todo,High,,,[],[],false,2026-04-08 22:46:23.954+00,2026-04-08 22:46:23.954+00,[],,false,,,,0,{}
+abef68b6-02ac-4317-b1c2-c4a6042843d3,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Email OTP Setup,Feature,Backlog,Medium,"- Integrate Resend API for login codes
+- Build 6-digit code generation + Redis expiry storage
+- Create verify endpoint + JWT session issuance
+
+resend.com for email otp
+
+",,[],[],false,2026-04-05 17:05:26.485+00,2026-04-08 08:16:30.501+00,[],,false,,,,0,{}
+b6a712d4-1846-4e71-9f68-33c2810aeb16,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Fix POS responsivity + transaction modal,Feature,Todo,Medium,,"Fix the full responsivity of the POS page and the transaction modal. Everything must work cleanly on mobile and tablet. Navbar always visible on POS except when a modal is open. Transaction modal tabs (cart, service info, payment) must be clear and easy to use on small screens",[],[],false,2026-04-05 17:32:46.949+00,2026-04-05 17:32:55.258+00,[],,false,,,,0,{}
+bc0cfd67-a0d1-4406-91be-0fecc6e34a08,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Transaction Modal,Feature,Todo,High,,"Go to the transaction modal connected to the POS page and fix its full responsivity. Right now on mobile it is very unclear — the cart, service info, and payment tabs are messy and hard to use. I need everything clear, simple and clean on mobile. Each tab (cart, service info, payment) needs to be clearly separated and easy to navigate. Fix the whole modal for mobile screens properly",[],[],false,2026-04-05 17:14:52.24+00,2026-04-08 14:04:16.526+00,[],,false,,,,0,{}
+c461efab-06df-4645-b34f-fcd3cf14479d,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Client Portal,Feature,Todo,High,"Full system tenant client portal, this includes, tracking the number of client portal, where will the fnctions and client protals will be created, how will we connect them with the tenant, we as superadmins we can select for each subscrtion type whther pro basic or whatver how many client portal accounts can be created, these are x months that we specify, then also the tenant can create one,  and then if he has still example 1 free client portal the count will be down a good system that cant be broken or exploited, and then if he has reached his limits, for each new client portal that he does it will need the mechanic to pay us etc, we can do it this way or we cna mkae it in subscrtion plans like plan 1 basic has 10client portal included plan 2 pro has x many  client portals , or we can specify when they need more client portals we can give them from supoeradmin and bill them, the payment will be done from cash in hand first later on we need to add payments for online payment. then createung the actual client portal logic it will take all records from the client card for the client only stricly and he cant change anyting he can view only invoices and not internal notes and other stuf, and we need to make it so well so it isnt just hidden but its not even sent from server, then stopping client protals when the tenant stops them, making expiry dates and other settings. making accounts with login password and email. makeing for each tenant a landing page create simple, with a button login to client portal and then there it will only check for client portal accounts etc, ",,[],[],false,2026-04-08 22:05:57.136+00,2026-04-08 22:18:06.699+00,[],,false,,,,0,{}
+c8713ce9-6e3b-41e0-8769-e70024c5b4a3,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Remove appointment button from POS,Feature,Todo,Medium,,"Remove the appointment button from the POS page that has no logic behind it. Do not touch the appointment link in the main navbar, leave that completely alone",[],[],false,2026-04-05 17:32:15.577+00,2026-04-05 17:32:21.432+00,[],,false,,,,0,{}
+d965b693-c202-46cf-945b-4765b9a84c1e,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Fix dashboard design,Fix,Todo,Medium,,"Redesign the tenant dashboard. Make it modern, clean, professional. Keep all existing widgets and data but make the layout, spacing, colors and overall design much better. Full responsivity on all screen sizes",[],[],false,2026-04-05 17:31:26.179+00,2026-04-05 17:31:32.468+00,[],,false,,,,0,{}
+ddfff0b3-bb87-473d-b785-986b25244a25,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,Tests,Idea,Backlog,Medium,,"Here's your prompt for testing languages, responsiveness, and light/dark mode across all pages:
+Hey Claude,
+Test my entire Vue app for three things: language translations, responsive design, and light/dark mode implementation.
+Test 1: Language Translations
+Check every page has:
+All text wrapped in $t() or t() calls
+No hardcoded English strings
+No missing translation keys
+Proper translation keys in both English and other language files
+Pages to check:
+plain
+Copy
+resources/js/Pages/**/*.vue
+Report:
+List pages with hardcoded text
+List missing translation keys
+List incomplete translations
+Test 2: Responsive Design
+Check every page works on:
+Mobile (320px - 768px)
+Tablet (768px - 1024px)
+Desktop (1024px+)
+What to check:
+No horizontal scroll on mobile
+Tables convert to cards or have horizontal scroll
+Sidebar collapses properly
+Modals fit screen width
+Text doesn't overflow containers
+Buttons are tappable size on mobile
+Report:
+List pages with responsive issues
+Specific breakpoints that break
+Test 3: Light/Dark Mode
+Verify every page has:
+dark: classes for all background colors
+dark: classes for all text colors
+dark: classes for all borders
+No hardcoded colors that don't switch
+Proper contrast in both modes
+Check these elements:
+Page backgrounds
+Cards and containers
+Tables and headers
+Forms and inputs
+Buttons (primary amber stays, secondary switches)
+Modals and dropdowns
+Empty states
+Loading states
+Report:
+List pages missing dark mode classes
+List elements that don't switch properly
+List contrast issues
+Process
+Go page by page through resources/js/Pages/
+Test each page in browser (or describe what to check)
+Check language file coverage
+Check responsive breakpoints
+Toggle light/dark mode and verify all elements
+Deliverable: Report with:
+Pages that pass all checks
+Pages with issues (categorized by: language, responsive, dark mode)
+Specific fixes needed per page",[],[],false,2026-04-05 17:25:54.881+00,2026-04-05 17:25:56.814+00,[],,false,,,,0,{}
+e531cebc-6bc9-41bb-9394-948161d949d6,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,tenant contrsact,Idea,Backlog,High,,,[],[],false,2026-04-08 22:36:50.468+00,2026-04-11 11:23:42.478+00,[],,false,,,,0,{}
+e7940ad6-ca18-4a4f-b498-d8347c06724f,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,2FA Layer,Feature,Backlog,Medium,- Generated code sent in email,,[],[],false,2026-04-05 17:06:01.54+00,2026-04-05 17:06:51.393+00,[],,false,,,,0,{}
+e8d0ba10-597c-4a80-85f9-bba122413eaa,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,tenant company disabled,Feature,Todo,High,,,[],[],false,2026-04-08 22:40:22.305+00,2026-04-08 22:40:22.305+00,[],,false,,,,0,{}
+f103caf2-aea4-48dc-bae8-e52649f4260a,b13dbd16-2f7a-4c17-979f-e7d7e49ec389,c9339f7a-603f-4c1a-850c-838529f7202f,"Remove ""My Garage"" feature from vehicle & client card",Fix,Todo,Medium,,"Remove the ""My Garage"" feature completely from the project. Go through the vehicle card and client card pages and remove any My Garage related buttons, UI elements, and frontend logic. Also remove any backend logic, controllers, routes, and database references related to My Garage if they exist. Clean it up completely like it never existed",[],[],false,2026-04-05 17:29:03.684+00,2026-04-05 17:29:12.955+00,[],,false,,,,0,{}

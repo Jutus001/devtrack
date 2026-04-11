@@ -211,19 +211,20 @@ export async function deleteProjectWithConfirm(project) {
 }
 
 // ── Join project modal ───────────────────────────────────────
-export function openJoinProjectModal() {
+export function openJoinProjectModal(prefillCode = '') {
   openModal({
     id: 'modal-join-project',
     title: 'Join a Project',
     body: `
       <div style="display:flex;flex-direction:column;gap:12px">
         <p style="font-size:13px;color:var(--text-muted)">
-          Enter the 6-character code shared by the project owner.
+          Enter the 6-character invite code, or open an invite link sent by the project owner.
         </p>
         <div class="form-group">
           <label class="form-label">Join Code</label>
           <input class="form-input" id="jc-code"
             placeholder="ABC123"
+            value="${escHtml(prefillCode.toUpperCase())}"
             style="font-family:var(--font-mono);font-size:18px;text-align:center;letter-spacing:4px;text-transform:uppercase"
             maxlength="6" />
         </div>
@@ -277,17 +278,28 @@ export async function openMembersModal(project) {
     `;
   }).join('');
 
+  const inviteLink = project.join_code
+    ? (window.location.origin + window.location.pathname + '?join=' + project.join_code)
+    : '';
+
   const codeSection = isOwner ? `
-    <div style="margin-top:16px;padding:12px;background:var(--elevated);border-radius:var(--r2);border:1px solid var(--border)">
-      <div style="font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Invite Code</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="font-family:var(--font-mono);font-size:22px;font-weight:700;letter-spacing:4px;color:var(--text)">${project.join_code || '------'}</div>
-        <button class="btn btn-ghost btn-sm" id="copy-join-code">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy
+    <div style="margin-top:16px;padding:14px;background:var(--elevated);border-radius:var(--r2);border:1px solid var(--border)">
+      <div style="font-size:11px;font-family:var(--font-mono);color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Invite to Project</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="font-family:var(--font-mono);font-size:24px;font-weight:700;letter-spacing:6px;color:var(--text);flex:1">${project.join_code || '------'}</div>
+        <button class="btn btn-ghost btn-sm" id="copy-join-code" title="Copy 6-character code">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Code
         </button>
       </div>
-      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Share this code with teammates</div>
+      <div style="border-top:1px solid var(--border);padding-top:10px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono)">${inviteLink}</div>
+        <button class="btn btn-primary btn-sm" id="copy-invite-link" style="width:100%">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Copy Invite Link
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Anyone with the link or code can join this project</div>
     </div>
   ` : '';
 
@@ -313,6 +325,17 @@ export async function openMembersModal(project) {
       copyBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(project.join_code || '');
         showToast('Code copied!', 'success');
+      });
+    }
+    const linkBtn = document.getElementById('copy-invite-link');
+    if (linkBtn) {
+      linkBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(inviteLink);
+        linkBtn.textContent = 'Link Copied!';
+        setTimeout(() => {
+          linkBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Copy Invite Link`;
+        }, 2000);
+        showToast('Invite link copied!', 'success');
       });
     }
   }, 50);

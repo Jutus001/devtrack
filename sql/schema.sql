@@ -168,6 +168,16 @@ DO $$ BEGIN
     ALTER TABLE tasks ADD COLUMN bug_fields jsonb DEFAULT '{}';
   END IF;
 END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='notes') THEN
+    ALTER TABLE tasks ADD COLUMN notes text;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='prompt') THEN
+    ALTER TABLE tasks ADD COLUMN prompt text;
+  END IF;
+END $$;
 
 -- ============================================================
 -- 3. SUPPORTING TABLES

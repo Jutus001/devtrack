@@ -38,6 +38,7 @@ export async function openTaskDetail(task) {
     
     <div class="panel-tabs">
       <button class="panel-tab active" data-tab="overview">Overview</button>
+      ${task.prompt ? '<button class="panel-tab" data-tab="prompt">Prompt</button>' : ''}
       <button class="panel-tab" data-tab="checklist">Checklist</button>
       <button class="panel-tab" data-tab="subtasks">Subtasks</button>
       <button class="panel-tab" data-tab="comments">Comments</button>
@@ -50,8 +51,26 @@ export async function openTaskDetail(task) {
           <div class="section-label">Description</div>
           <div class="section-text">${escHtml(task.description || 'No description provided.')}</div>
         </div>
+        ${task.notes ? `
+        <div class="section" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+          <div class="section-label">Notes</div>
+          <div class="section-text" style="white-space:pre-wrap">${escHtml(task.notes)}</div>
+        </div>
+        ` : ''}
         ${task.task_type === 'bug' ? renderBugFields(task.bug_fields) : ''}
       </div>
+      ${task.prompt ? `
+      <div id="panel-tab-prompt" class="tab-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:11px;font-family:var(--font-mono);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)">AI Prompt</div>
+          <button id="btn-copy-prompt" class="btn btn-ghost btn-sm" style="font-size:11px;display:flex;align-items:center;gap:5px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre style="font-family:var(--font-mono);font-size:12px;line-height:1.65;color:var(--text);background:var(--elevated);border:1px solid var(--border);border-radius:var(--r2);padding:14px;white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow-y:auto;margin:0">${escHtml(task.prompt)}</pre>
+      </div>
+      ` : ''}
       <div id="panel-tab-checklist" class="tab-content">
         <div id="checklist-list">Loading...</div>
         <div class="input-group" style="margin-top:16px;display:flex;gap:8px">
@@ -89,12 +108,19 @@ export async function openTaskDetail(task) {
 
   panel.classList.add('open');
 
+  // Update mobile nav active state
+  import('./app.js').then(m => m.setMobileNavActive('detail'));
+
   // Wire close
-  const closePanel = () => panel.classList.remove('open');
+  const closePanel = () => {
+    panel.classList.remove('open');
+    import('./app.js').then(m => m.setMobileNavActive('board'));
+  };
   panel.querySelector('.panel-close-btn').onclick = closePanel;
 
   // ESC closes the panel
   const escHandler = (e) => { if (e.key === 'Escape') { closePanel(); document.removeEventListener('keydown', escHandler); } };
+
   document.addEventListener('keydown', escHandler);
   
   panel.querySelector('#btn-pin-task').onclick = async () => {
@@ -108,14 +134,28 @@ export async function openTaskDetail(task) {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       panel.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      panel.querySelector(`#panel-tab-${tab.dataset.tab}`).classList.add('active');
-      
+      const tabEl = panel.querySelector(`#panel-tab-${tab.dataset.tab}`);
+      if (tabEl) tabEl.classList.add('active');
+
       if (tab.dataset.tab === 'checklist') loadChecklist(task.id);
       if (tab.dataset.tab === 'subtasks') loadSubtasks(task.id);
       if (tab.dataset.tab === 'comments') loadComments(task.id);
       if (tab.dataset.tab === 'activity') loadActivity(task.id);
     };
   });
+
+  // Copy prompt button
+  const copyBtn = panel.querySelector('#btn-copy-prompt');
+  if (copyBtn && task.prompt) {
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(task.prompt).then(() => {
+        copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+        setTimeout(() => {
+          copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+        }, 2000);
+      }).catch(() => showToast('Copy failed', 'error'));
+    };
+  }
 
   document.getElementById('btn-add-check').onclick = async () => {
     const text = document.getElementById('new-check-text').value.trim();

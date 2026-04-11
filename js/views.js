@@ -86,7 +86,7 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
               </div>` : ''}
           </td>
           <td class="table-col-hide-tablet">
-            <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color}">${typeConf.icon} ${typeConf.label}</span>
+            <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color}">${typeConf.svg} ${typeConf.label}</span>
           </td>
           <td>
             <span class="badge status-badge" data-status="${task.status}">${status.label}</span>
@@ -238,7 +238,7 @@ function buildUpcomingRow(task) {
 
   return `
     <div class="upcoming-task-row" data-task-id="${task.id}">
-      <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color};width:20px;justify-content:center">${typeConf.icon}</span>
+      <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color};width:20px;justify-content:center">${typeConf.svg}</span>
       <span style="flex:1;font-size:13px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(task.title)}</span>
       ${task.due_date ? `
         <span class="badge ${dueCls==='due-overdue'?'badge-red':dueCls==='due-today'?'badge-amber':'badge-accent'}" style="font-size:10px;flex-shrink:0">
@@ -364,7 +364,7 @@ export async function renderRoadmapView(projectId, appState = {}) {
         return `
           <div class="roadmap-row" data-task-id="${task.id}">
             <div class="roadmap-task-label" title="${escHtml(task.title)}">
-              <span style="color:${typeConf.color};margin-right:4px">${typeConf.icon}</span>
+              <span style="color:${typeConf.color};margin-right:4px">${typeConf.svg}</span>
               ${escHtml(task.title)}
             </div>
             <div class="roadmap-bar-area">

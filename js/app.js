@@ -110,6 +110,15 @@ async function bootApp(user) {
     } else {
       showDashboard();
     }
+    // Handle ?join=CODE invite links
+    const joinCode = new URLSearchParams(window.location.search).get('join');
+    if (joinCode) {
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(async () => {
+        const { openJoinProjectModal } = await import('./projects.js');
+        openJoinProjectModal(joinCode);
+      }, 400);
+    }
   } catch (err) {
     console.error('Boot error:', err);
     showToast('Failed to initialize app', 'error');
@@ -123,6 +132,12 @@ export async function switchProject(projectId) {
   AppState.currentProjectId = projectId;
   AppState.currentProject = AppState.projects.find(p => p.id === projectId);
   localStorage.setItem('devtrack_active_pid', projectId);
+
+  // On mobile, close sidebar after selecting a project
+  if (window.innerWidth <= 900) {
+    document.getElementById('sidebar')?.classList.remove('open');
+    setMobileNavActive('board');
+  }
 
   // Update sidebar UI
   document.querySelectorAll('.project-item').forEach(el => {
@@ -236,7 +251,53 @@ export function setView(view) {
 }
 
 // ── Event Handlers ───────────────────────────────────────────
+// ── Mobile Sidebar ───────────────────────────────────────────
+function openMobileSidebar() {
+  document.getElementById('sidebar')?.classList.add('open');
+  setMobileNavActive('projects');
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  setMobileNavActive('board');
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar?.classList.contains('open')) {
+    closeMobileSidebar();
+  } else {
+    // Close detail panel first
+    document.getElementById('detail-panel')?.classList.remove('open');
+    openMobileSidebar();
+  }
+}
+
+export function setMobileNavActive(tab) {
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`mobile-nav-${tab}`)?.classList.add('active');
+}
+
 function setupGlobalEvents() {
+  // Mobile sidebar
+  document.getElementById('btn-sidebar-toggle')?.addEventListener('click', toggleMobileSidebar);
+  document.getElementById('sidebar-overlay')?.addEventListener('click', closeMobileSidebar);
+
+  // Bottom nav
+  document.getElementById('mobile-nav-projects')?.addEventListener('click', toggleMobileSidebar);
+  document.getElementById('mobile-nav-board')?.addEventListener('click', () => {
+    closeMobileSidebar();
+    document.getElementById('detail-panel')?.classList.remove('open');
+  });
+  document.getElementById('mobile-nav-detail')?.addEventListener('click', () => {
+    const panel = document.getElementById('detail-panel');
+    if (panel?.classList.contains('open')) {
+      setMobileNavActive('detail');
+    } else {
+      // Nothing open — do nothing or show a hint
+    }
+  });
+
   // Topbar
   document.getElementById('topbar-avatar')?.addEventListener('click', e => {
     e.stopPropagation();
