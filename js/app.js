@@ -77,13 +77,10 @@ async function init() {
     }
   });
 
-  // 4. When tab regains focus: kill loader immediately, then silently refresh
+  // 4. When tab regains focus: just kill any stuck loader, don't refresh anything
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       forceHideLoader();
-      if (_hasBooted && AppState.currentProjectId) {
-        refreshCurrentView(true);
-      }
     }
   });
 
