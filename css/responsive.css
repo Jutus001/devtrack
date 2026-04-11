@@ -1,0 +1,299 @@
+/* DevTrack — responsive.css: mobile, tablet, print */
+
+/* ══════════════════════════════════════════
+   TABLET  (≤ 900px)
+══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 48px 1fr;
+    grid-template-areas:
+      "topbar"
+      "main";
+  }
+
+  /* Sidebar becomes a slide-in drawer */
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: 800;
+    transform: translateX(-100%);
+    transition: transform var(--t-slow);
+    box-shadow: var(--shadow-xl);
+  }
+
+  #sidebar.open { transform: translateX(0); }
+
+  /* Overlay when sidebar is open */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 790;
+    backdrop-filter: blur(2px);
+  }
+
+  #sidebar.open ~ #sidebar-overlay { display: block; }
+
+  /* Hamburger button */
+  #btn-sidebar-toggle {
+    display: flex !important;
+  }
+
+  /* Detail panel full-screen on tablet */
+  #detail-panel {
+    width: 100vw;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Notifications panel */
+  #notifications-panel {
+    width: 100vw;
+  }
+
+  /* Kanban: allow horizontal scroll */
+  #kanban-board {
+    padding: var(--s3);
+    gap: var(--s3);
+  }
+
+  .kanban-column {
+    width: 260px;
+    min-width: 260px;
+  }
+
+  /* Table view: hide some columns */
+  .table-col-hide-tablet { display: none; }
+
+  /* Roadmap: shrink label col */
+  .roadmap-label-col {
+    width: 120px;
+    min-width: 120px;
+    font-size: 11px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   MOBILE  (≤ 600px)
+══════════════════════════════════════════ */
+@media (max-width: 600px) {
+  html { font-size: 13px; }
+
+  #sidebar-logo { font-size: 14px; }
+
+  /* Topbar: tighter */
+  #topbar { padding: 0 var(--s3); gap: var(--s2); }
+  #topbar-title { font-size: 12px; }
+
+  /* View toolbar: stack */
+  #view-toolbar {
+    padding: var(--s2) var(--s3);
+    gap: var(--s2);
+  }
+
+  .view-tabs { width: 100%; overflow-x: auto; }
+
+  /* Focus strip: scrollable */
+  #focus-strip { gap: var(--s2); }
+
+  /* Kanban: full width single column feel */
+  #kanban-board {
+    padding: var(--s2);
+    gap: var(--s2);
+  }
+
+  .kanban-column {
+    width: 82vw;
+    min-width: 82vw;
+  }
+
+  /* Modals: full-screen */
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100% !important;
+    border-radius: var(--r3) var(--r3) 0 0;
+    max-height: 90dvh;
+    animation: slideUp 200ms ease;
+  }
+
+  /* Command palette */
+  #command-palette { padding-top: 0; align-items: flex-end; }
+  .palette-box {
+    width: 100%;
+    border-radius: var(--r3) var(--r3) 0 0;
+    animation: slideUp 180ms ease;
+  }
+
+  /* Toast: full width */
+  #toast-container {
+    bottom: var(--s3);
+    right: var(--s3);
+    left: var(--s3);
+  }
+  .toast { max-width: 100%; }
+
+  /* Detail panel: full screen */
+  #detail-panel {
+    width: 100vw;
+    top: 0;
+  }
+
+  /* Table: show fewer columns */
+  .table-col-hide-mobile { display: none; }
+
+  /* Profile panel */
+  .profile-panel { width: 100vw; left: 0; right: 0; border-radius: 0; }
+
+  /* Roadmap: hidden on very small screens */
+  .roadmap-label-col {
+    width: 90px;
+    min-width: 90px;
+    font-size: 10px;
+  }
+
+  /* Auth card: full width */
+  .auth-card {
+    max-width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Checklist items: easier tap targets */
+  .checklist-checkbox { width: 20px; height: 20px; }
+}
+
+/* ══════════════════════════════════════════
+   SMALL DESKTOP  (901px – 1100px)
+══════════════════════════════════════════ */
+@media (min-width: 901px) and (max-width: 1100px) {
+  #app {
+    grid-template-columns: 200px 1fr;
+  }
+
+  .kanban-column {
+    width: 240px;
+    min-width: 240px;
+  }
+
+  #detail-panel {
+    width: 420px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   LARGE DESKTOP  (≥ 1400px)
+══════════════════════════════════════════ */
+@media (min-width: 1400px) {
+  #app {
+    grid-template-columns: 240px 1fr;
+  }
+
+  .kanban-column {
+    width: 300px;
+    min-width: 300px;
+  }
+
+  #detail-panel {
+    width: 520px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   REDUCED MOTION
+══════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ══════════════════════════════════════════
+   PRINT
+══════════════════════════════════════════ */
+@media print {
+  #sidebar,
+  #topbar,
+  #view-toolbar,
+  #focus-strip,
+  #detail-panel,
+  #command-palette,
+  #toast-container,
+  #notifications-panel,
+  .btn,
+  .col-add-btn,
+  .card-drag-handle {
+    display: none !important;
+  }
+
+  #app {
+    display: block;
+  }
+
+  #main, #view-container {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+  }
+
+  .task-card {
+    break-inside: avoid;
+    border: 1px solid #ccc !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  #kanban-board {
+    display: block;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .kanban-column {
+    width: 100% !important;
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   SIDEBAR OVERLAY (always in DOM, hidden by default)
+══════════════════════════════════════════ */
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 790;
+}
+
+/* ══════════════════════════════════════════
+   HAMBURGER (hidden on desktop)
+══════════════════════════════════════════ */
+#btn-sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--r2);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+
+#btn-sidebar-toggle:hover { background: var(--elevated); color: var(--text); }

@@ -1,0 +1,592 @@
+// DevTrack — tasks.js
+// Task CRUD, all task fields, filters, quick-create
+
+import {
+  getTasks, createTask, updateTask, deleteTask, archiveTask,
+  getChecklist, getSubtasks, getMilestones, getSprints,
+  getProjectMembers, getProfiles, logActivity
+} from './supabase.js';
+import { showToast, openModal, closeModal, confirm } from './ui.js';
+import { initials } from './auth.js';
+import { escHtml } from './projects.js';
+import { AppState } from './app.js';
+
+// ── Task type config ──────────────────────────────────────────
+export const TASK_TYPES = {
+  feature:     { label: 'Feature',     icon: '✦', color: 'var(--accent)' },
+  bug:         { label: 'Bug',         icon: '⚠', color: 'var(--red)' },
+  chore:       { label: 'Chore',       icon: '⚙', color: 'var(--text-dim)' },
+  research:    { label: 'Research',    icon: '🔍', color: 'var(--purple)' },
+  design:      { label: 'Design',      icon: '◈',  color: 'var(--amber)' },
+};
+
+export const STATUSES = [
+  { id: 'todo',        label: 'To Do',       color: '#888890' },
+  { id: 'in_progress', label: 'In Progress', color: '#4f8eff' },
+  { id: 'in_review',  label: 'In Review',   color: '#a855f7' },
+  { id: 'done',       label: 'Done',         color: '#3ecf8e' },
+  { id: 'blocked',    label: 'Blocked',      color: '#f05151' },
+];
+
+export const PRIORITIES = [
+  { id: 'critical', label: 'Critical', color: 'var(--red)' },
+  { id: 'high',     label: 'High',     color: 'var(--amber)' },
+  { id: 'medium',   label: 'Medium',   color: 'var(--accent)' },
+  { id: 'low',      label: 'Low',      color: 'var(--text-dim)' },
+];
+
+// ── Load tasks for a project ─────────────────────────────────
+export async function loadTasks(projectId, filters = {}) {
+  try {
+    const tasks = await getTasks(projectId, filters);
+    AppState.tasks = tasks;
+    return tasks;
+  } catch (err) {
+    showToast('Failed to load tasks', 'error');
+    return [];
+  }
+}
+
+// ── Quick create (inline in Kanban column) ───────────────────
+export function quickCreateTask(status, projectId, onCreated) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    background:var(--surface);border:1px solid var(--accent);
+    border-radius:var(--r3);padding:10px;margin:4px 0;
+  `;
+  overlay.innerHTML = `
+    <input class="form-input" id="quick-task-title" placeholder="Task title…"
+      style="width:100%;margin-bottom:8px;background:var(--elevated)" />
+    <div style="display:flex;gap:6px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" id="quick-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="quick-save">Add</button>
+    </div>
+  `;
+
+  document.getElementById('quick-cancel')?.remove();
+  return overlay;
+}
+
+// ── Create task modal ────────────────────────────────────────
+export async function openCreateTaskModal(projectId, defaultStatus = 'todo', defaultFields = {}) {
+  const [milestones, sprints, members, profiles] = await Promise.all([
+    getMilestones(projectId).catch(() => []),
+    getSprints(projectId).catch(() => []),
+    getProjectMembers(projectId).catch(() => []),
+    getProfiles([]).catch(() => [])
+  ]);
+
+  const memberProfiles = members.length > 0
+    ? await getProfiles(members.map(m => m.user_id)).catch(() => [])
+    : [];
+
+  const body = buildTaskForm({
+    milestones, sprints, memberProfiles,
+    defaults: { status: defaultStatus, ...defaultFields }
+  });
+
+  openModal({
+    id: 'modal-create-task',
+    title: 'New Task',
+    body,
+    size: 'md',
+    primaryLabel: 'Create Task',
+    onPrimary: async () => {
+      const title = document.getElementById('tf-title').value.trim();
+      if (!title) { showToast('Title is required', 'error'); return false; }
+
+      const tags = document.getElementById('tf-tags').value
+        .split(',').map(t => t.trim()).filter(Boolean);
+
+      const taskType = document.getElementById('tf-type').value;
+      let bugFields = {};
+      if (taskType === 'bug') {
+        bugFields = {
+          steps: document.getElementById('tf-bug-steps')?.value || '',
+          expected: document.getElementById('tf-bug-expected')?.value || '',
+          actual: document.getElementById('tf-bug-actual')?.value || '',
+          environment: document.getElementById('tf-bug-env')?.value || ''
+        };
+      }
+
+      const assigneeEls = document.querySelectorAll('#tf-assignees input:checked');
+      const assignees = Array.from(assigneeEls).map(el => el.value);
+
+      try {
+        const task = await createTask({
+          project_id: projectId,
+          title,
+          description: document.getElementById('tf-desc').value.trim(),
+          task_type: taskType,
+          status: document.getElementById('tf-status').value,
+          priority: document.getElementById('tf-priority').value,
+          due_date: document.getElementById('tf-due').value || null,
+          github_url: document.getElementById('tf-github').value.trim() || null,
+          is_blocker: document.getElementById('tf-blocker').checked,
+          milestone_id: document.getElementById('tf-milestone').value || null,
+          sprint_id: document.getElementById('tf-sprint').value || null,
+          tags,
+          assignees,
+          bug_fields: bugFields,
+          notes: {}
+        });
+        showToast('Task created', 'success');
+        if (typeof defaultFields.onCreated === 'function') defaultFields.onCreated(task);
+        import('./app.js').then(m => m.refreshCurrentView());
+        return true;
+      } catch (err) { showToast(err.message, 'error'); return false; }
+    }
+  });
+
+  // Show/hide bug fields
+  setTimeout(() => {
+    const typeSelect = document.getElementById('tf-type');
+    typeSelect?.addEventListener('change', () => {
+      const bugSection = document.getElementById('tf-bug-section');
+      if (bugSection) bugSection.style.display = typeSelect.value === 'bug' ? 'block' : 'none';
+    });
+    // Trigger once
+    if (typeSelect && typeSelect.value === 'bug') {
+      const bugSection = document.getElementById('tf-bug-section');
+      if (bugSection) bugSection.style.display = 'block';
+    }
+  }, 50);
+}
+
+// ── Edit task modal ──────────────────────────────────────────
+export async function openEditTaskModal(task) {
+  const [milestones, sprints, members] = await Promise.all([
+    getMilestones(task.project_id).catch(() => []),
+    getSprints(task.project_id).catch(() => []),
+    getProjectMembers(task.project_id).catch(() => [])
+  ]);
+
+  const memberProfiles = members.length > 0
+    ? await getProfiles(members.map(m => m.user_id)).catch(() => [])
+    : [];
+
+  const body = buildTaskForm({
+    milestones, sprints, memberProfiles,
+    defaults: task,
+    isEdit: true
+  });
+
+  openModal({
+    id: 'modal-edit-task',
+    title: 'Edit Task',
+    body,
+    size: 'md',
+    primaryLabel: 'Save Changes',
+    onPrimary: async () => {
+      const title = document.getElementById('tf-title').value.trim();
+      if (!title) { showToast('Title required', 'error'); return false; }
+
+      const tags = document.getElementById('tf-tags').value
+        .split(',').map(t => t.trim()).filter(Boolean);
+
+      const taskType = document.getElementById('tf-type').value;
+      let bugFields = task.bug_fields || {};
+      if (taskType === 'bug') {
+        bugFields = {
+          steps: document.getElementById('tf-bug-steps')?.value || '',
+          expected: document.getElementById('tf-bug-expected')?.value || '',
+          actual: document.getElementById('tf-bug-actual')?.value || '',
+          environment: document.getElementById('tf-bug-env')?.value || ''
+        };
+      }
+
+      const assigneeEls = document.querySelectorAll('#tf-assignees input:checked');
+      const assignees = Array.from(assigneeEls).map(el => el.value);
+
+      try {
+        const updated = await updateTask(task.id, {
+          title,
+          description: document.getElementById('tf-desc').value.trim(),
+          task_type: taskType,
+          status: document.getElementById('tf-status').value,
+          priority: document.getElementById('tf-priority').value,
+          due_date: document.getElementById('tf-due').value || null,
+          github_url: document.getElementById('tf-github').value.trim() || null,
+          is_blocker: document.getElementById('tf-blocker').checked,
+          milestone_id: document.getElementById('tf-milestone').value || null,
+          sprint_id: document.getElementById('tf-sprint').value || null,
+          tags,
+          assignees,
+          bug_fields: bugFields
+        });
+
+        await logActivity(task.project_id, task.id, 'task_updated', { title });
+        showToast('Task updated', 'success');
+        import('./app.js').then(m => m.refreshCurrentView());
+
+        // Re-render detail panel if open
+        const panel = document.getElementById('detail-panel');
+        if (panel && panel.classList.contains('open')) {
+          import('./collaboration.js').then(m => m.openTaskDetail(updated));
+        }
+        return true;
+      } catch (err) { showToast(err.message, 'error'); return false; }
+    }
+  });
+
+  setTimeout(() => {
+    const typeSelect = document.getElementById('tf-type');
+    if (typeSelect) {
+      typeSelect.addEventListener('change', () => {
+        const bugSection = document.getElementById('tf-bug-section');
+        if (bugSection) bugSection.style.display = typeSelect.value === 'bug' ? 'block' : 'none';
+      });
+      if (typeSelect.value === 'bug') {
+        const bugSection = document.getElementById('tf-bug-section');
+        if (bugSection) bugSection.style.display = 'block';
+      }
+    }
+  }, 50);
+}
+
+// ── Build task form HTML ──────────────────────────────────────
+function buildTaskForm({ milestones = [], sprints = [], memberProfiles = [], defaults = {}, isEdit = false }) {
+  const d = defaults;
+  const bf = d.bug_fields || {};
+
+  return `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input class="form-input" id="tf-title" value="${escHtml(d.title || '')}" placeholder="Task title…" required />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-input form-select" id="tf-type">
+            ${Object.entries(TASK_TYPES).map(([id, t]) =>
+              `<option value="${id}" ${d.task_type === id ? 'selected' : ''}>${t.icon} ${t.label}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input form-select" id="tf-status">
+            ${STATUSES.map(s =>
+              `<option value="${s.id}" ${(d.status || 'todo') === s.id ? 'selected' : ''}>${s.label}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-input form-select" id="tf-priority">
+            ${PRIORITIES.map(p =>
+              `<option value="${p.id}" ${(d.priority || 'medium') === p.id ? 'selected' : ''}>${p.label}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input class="form-input" id="tf-due" type="date" value="${d.due_date || ''}" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-input" id="tf-desc" rows="3" placeholder="What needs to be done?">${escHtml(d.description || '')}</textarea>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Milestone</label>
+          <select class="form-input form-select" id="tf-milestone">
+            <option value="">None</option>
+            ${milestones.map(m =>
+              `<option value="${m.id}" ${d.milestone_id === m.id ? 'selected' : ''}>${escHtml(m.name)}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sprint</label>
+          <select class="form-input form-select" id="tf-sprint">
+            <option value="">None</option>
+            ${sprints.map(s =>
+              `<option value="${s.id}" ${d.sprint_id === s.id ? 'selected' : ''}>${escHtml(s.name)}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tags (comma separated)</label>
+        <input class="form-input" id="tf-tags" value="${(d.tags || []).join(', ')}" placeholder="frontend, api, urgent…" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">GitHub / GitLab URL</label>
+        <input class="form-input" id="tf-github" type="url" value="${escHtml(d.github_url || '')}" placeholder="https://github.com/…/issues/123" />
+      </div>
+
+      ${memberProfiles.length > 0 ? `
+      <div class="form-group">
+        <label class="form-label">Assignees</label>
+        <div id="tf-assignees" style="display:flex;flex-wrap:wrap;gap:8px">
+          ${memberProfiles.map(p => `
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
+              <input type="checkbox" value="${p.id}" ${(d.assignees || []).includes(p.id) ? 'checked' : ''} />
+              <span class="avatar avatar-xs" style="background:${p.avatar_color||'#4f8eff'};color:#fff">${initials(p.display_name)}</span>
+              ${escHtml(p.display_name || 'User')}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="tf-blocker" ${d.is_blocker ? 'checked' : ''} />
+          <span style="color:var(--red);font-weight:500">Mark as Blocker</span>
+          <span style="font-size:11px;color:var(--text-dim)">(shows red stripe on card)</span>
+        </label>
+      </div>
+
+      <!-- Bug fields (shown only when type = bug) -->
+      <div id="tf-bug-section" style="display:none;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:12px">Bug Report Fields</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Steps to Reproduce</label>
+            <textarea class="form-input" id="tf-bug-steps" rows="3" placeholder="1. Go to...\n2. Click on...\n3. See error">${escHtml(bf.steps || '')}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expected Behavior</label>
+            <textarea class="form-input" id="tf-bug-expected" rows="2" placeholder="What should happen?">${escHtml(bf.expected || '')}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Actual Behavior</label>
+            <textarea class="form-input" id="tf-bug-actual" rows="2" placeholder="What actually happens?">${escHtml(bf.actual || '')}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Environment</label>
+            <input class="form-input" id="tf-bug-env" value="${escHtml(bf.environment || '')}" placeholder="OS, browser, version…" />
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Delete task ───────────────────────────────────────────────
+export async function deleteTaskWithConfirm(task) {
+  const ok = await confirm(`Delete "${task.title}"?`, 'This cannot be undone.');
+  if (!ok) return;
+  try {
+    await deleteTask(task.id);
+    showToast('Task deleted', 'success');
+    import('./app.js').then(m => m.refreshCurrentView());
+    // Close detail panel if showing this task
+    const panel = document.getElementById('detail-panel');
+    if (panel && panel.dataset.taskId === task.id) {
+      panel.classList.remove('open');
+    }
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ── Render task card ──────────────────────────────────────────
+export async function renderTaskCard(task, opts = {}) {
+  const dueCls = getDueDateClass(task.due_date);
+  const typeConf = TASK_TYPES[task.task_type] || TASK_TYPES.feature;
+  const priorityConf = PRIORITIES.find(p => p.id === task.priority) || PRIORITIES[2];
+
+  // Checklist & Subtask progress
+  let progressHtml = '';
+  const checkTotal = (task._checklist || []).length;
+  const subTotal = (task._subtasks || []).length;
+  
+  if (checkTotal > 0 || subTotal > 0) {
+    const checkDone = (task._checklist || []).filter(c => c.done).length;
+    const subDone = (task._subtasks || []).filter(s => s.status === 'done').length;
+    const total = checkTotal + subTotal;
+    const done = checkDone + subDone;
+    const pct = Math.round((done / total) * 100);
+    
+    progressHtml = `
+      <div class="progress-bar" title="${done}/${total} combined progress">
+        <div class="progress-fill ${pct === 100 ? 'complete' : ''}" style="width:${pct}%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;font-family:var(--font-mono);color:var(--text-dim);margin-top:2px">
+        <span>${checkTotal > 0 ? `Checklist: ${checkDone}/${checkTotal}` : ''}</span>
+        <span>${subTotal > 0 ? `Subtasks: ${subDone}/${subTotal}` : ''}</span>
+      </div>
+    `;
+  }
+
+  // Creator Avatar
+  let creatorHtml = '';
+  if (task.user_id && opts.profiles) {
+    const p = opts.profiles[task.user_id];
+    creatorHtml = `
+      <div class="avatar avatar-xs" style="background:${p?.avatar_color || '#4f8eff'};color:#fff;border:1px solid var(--border)" title="Created by: ${escHtml(p?.display_name || 'Unknown')}">
+        ${initials(p?.display_name || '?')}
+      </div>
+    `;
+  }
+
+  // Assignee avatars
+  let assigneeHtml = '';
+  if (task.assignees && task.assignees.length > 0 && opts.profiles) {
+    const shown = task.assignees.slice(0, 3);
+    const extra = task.assignees.length - 3;
+    assigneeHtml = `<div class="avatar-group">
+      ${extra > 0 ? `<div class="avatar avatar-xs avatar-overflow">+${extra}</div>` : ''}
+      ${shown.map(uid => {
+        const p = opts.profiles[uid];
+        return `<div class="avatar avatar-xs" style="background:${p?.avatar_color || '#4f8eff'};color:#fff" title="Assignee: ${escHtml(p?.display_name || '')}">
+          ${initials(p?.display_name || '?')}
+        </div>`;
+      }).reverse().join('')}
+    </div>`;
+  }
+
+  // Tags
+  const tagsHtml = (task.tags || []).slice(0, 3).map(t =>
+    `<span class="tag-pill">${escHtml(t)}</span>`
+  ).join('');
+
+  // GitHub badge
+  const githubHtml = task.github_url
+    ? `<a href="${escHtml(task.github_url)}" target="_blank" rel="noopener" class="repo-badge" onclick="event.stopPropagation()">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.56 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        ${getRepoName(task.github_url)}
+      </a>`
+    : '';
+
+  return `
+    <div class="task-card ${task.is_blocker ? 'is-blocker' : ''} ${dueCls}"
+         data-task-id="${task.id}"
+         data-status="${task.status}">
+
+      <div class="card-drag-handle" aria-label="Drag task">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="6" r="1" fill="currentColor"/><circle cx="15" cy="6" r="1" fill="currentColor"/>
+          <circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/>
+          <circle cx="9" cy="18" r="1" fill="currentColor"/><circle cx="15" cy="18" r="1" fill="currentColor"/>
+        </svg>
+      </div>
+
+      <div class="card-header">
+        ${creatorHtml}
+        <div class="card-title">${escHtml(task.title)}</div>
+      </div>
+
+      ${task.description ? `<div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-bottom:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(task.description)}</div>` : ''}
+
+      <div class="card-meta">
+        <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color}">${typeConf.icon} ${typeConf.label}</span>
+        <span class="badge badge-default" data-priority="${task.priority}">
+          <span class="priority-dot"></span>${priorityConf.label}
+        </span>
+        ${task.due_date ? `<span class="badge ${dueCls === 'due-overdue' ? 'badge-red' : dueCls === 'due-today' ? 'badge-amber' : 'badge-accent'}" style="font-size:10px">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${formatShortDate(task.due_date)}
+        </span>` : ''}
+        ${tagsHtml}
+      </div>
+
+      ${progressHtml}
+
+      <div class="card-footer">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${githubHtml}
+          ${task.task_type === 'bug' ? '<span class="badge badge-red" style="padding:2px 4px;font-size:9px">BUG FIELDS</span>' : ''}
+        </div>
+        ${assigneeHtml}
+      </div>
+
+      ${task.is_blocker ? `<div style="position:absolute;top:4px;right:6px;font-size:8px;font-family:var(--font-mono);color:var(--red);font-weight:800;background:var(--red-dim);padding:0 4px;border-radius:2px">BLOCKED</div>` : ''}
+    </div>
+  `;
+}
+
+// ── Filter bar ────────────────────────────────────────────────
+export function renderFilterBar(filters, onChange) {
+  const container = document.getElementById('filter-bar');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="filter-bar">
+      <div class="search-input" style="min-width:180px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="filter-search" placeholder="Search tasks…" value="${filters.search || ''}" />
+      </div>
+
+      <select class="form-input form-select" id="filter-status" style="width:auto;font-size:12px;padding:5px 24px 5px 8px">
+        <option value="">All Status</option>
+        ${STATUSES.map(s => `<option value="${s.id}" ${filters.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+      </select>
+
+      <select class="form-input form-select" id="filter-priority" style="width:auto;font-size:12px;padding:5px 24px 5px 8px">
+        <option value="">All Priority</option>
+        ${PRIORITIES.map(p => `<option value="${p.id}" ${filters.priority === p.id ? 'selected' : ''}>${p.label}</option>`).join('')}
+      </select>
+
+      <select class="form-input form-select" id="filter-type" style="width:auto;font-size:12px;padding:5px 24px 5px 8px">
+        <option value="">All Types</option>
+        ${Object.entries(TASK_TYPES).map(([id, t]) =>
+          `<option value="${id}" ${filters.task_type === id ? 'selected' : ''}>${t.label}</option>`
+        ).join('')}
+      </select>
+
+      <label class="filter-chip ${filters.is_blocker ? 'active' : ''}" id="filter-blocker">
+        <input type="checkbox" style="display:none" ${filters.is_blocker ? 'checked' : ''} />
+        ⚠ Blockers only
+      </label>
+
+      ${Object.keys(filters).some(k => filters[k] && k !== 'status') ? `
+        <button class="btn btn-ghost btn-sm" id="filter-clear" style="font-size:11px">Clear filters</button>
+      ` : ''}
+    </div>
+  `;
+
+  // Wire events
+  let debounceTimer;
+  document.getElementById('filter-search')?.addEventListener('input', e => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => onChange({ ...filters, search: e.target.value }), 300);
+  });
+  document.getElementById('filter-status')?.addEventListener('change', e => onChange({ ...filters, status: e.target.value }));
+  document.getElementById('filter-priority')?.addEventListener('change', e => onChange({ ...filters, priority: e.target.value }));
+  document.getElementById('filter-type')?.addEventListener('change', e => onChange({ ...filters, task_type: e.target.value }));
+  document.getElementById('filter-blocker')?.addEventListener('click', () => {
+    onChange({ ...filters, is_blocker: !filters.is_blocker });
+  });
+  document.getElementById('filter-clear')?.addEventListener('click', () => onChange({}));
+}
+
+// ── Date utilities ────────────────────────────────────────────
+export function getDueDateClass(due) {
+  if (!due) return '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(due + 'T00:00:00');
+  if (d < today) return 'due-overdue';
+  if (d.getTime() === today.getTime()) return 'due-today';
+  const week = new Date(today); week.setDate(today.getDate() + 7);
+  if (d <= week) return 'due-week';
+  return '';
+}
+
+export function formatShortDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function getRepoName(url) {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts.length >= 2) return `${parts[0]}/${parts[1]}`;
+    return u.hostname;
+  } catch { return 'Link'; }
+}
