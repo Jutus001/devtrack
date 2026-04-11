@@ -124,13 +124,13 @@ export async function refreshCurrentView() {
     // 4. Render Active View
     if (AppState.activeView === 'kanban') {
       const { renderKanban } = await import('./kanban.js');
-      await renderKanban(AppState.currentProjectId, AppState.filters);
+      await renderKanban(AppState.currentProjectId, AppState.filters, AppState);
     } else if (AppState.activeView === 'table') {
-      await renderTableView(AppState.currentProjectId, AppState.filters);
+      await renderTableView(AppState.currentProjectId, AppState.filters, AppState);
     } else if (AppState.activeView === 'upcoming') {
-      await renderUpcomingView(AppState.currentProjectId, AppState.filters);
+      await renderUpcomingView(AppState.currentProjectId, AppState.filters, AppState);
     } else if (AppState.activeView === 'roadmap') {
-      await renderRoadmapView(AppState.currentProjectId);
+      await renderRoadmapView(AppState.currentProjectId, AppState);
     }
   } catch (err) {
     console.error('View refresh error:', err);

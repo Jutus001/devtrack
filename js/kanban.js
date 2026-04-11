@@ -3,7 +3,6 @@
 
 import { getTasks, reorderTasks, updateTask, getProfiles, getProjectMembers } from './supabase.js';
 import { renderTaskCard, STATUSES, openCreateTaskModal } from './tasks.js';
-import { AppState } from './app.js';
 import { showToast } from './ui.js';
 
 // ── State machine ─────────────────────────────────────────────
@@ -30,7 +29,7 @@ let _taskCache = [];
 let _filters = {};
 
 // ── Main render ──────────────────────────────────────────────
-export async function renderKanban(projectId, filters = {}) {
+export async function renderKanban(projectId, filters = {}, appState = {}) {
   _filters = filters;
   const board = document.getElementById('kanban-board');
   if (!board) return;
@@ -70,7 +69,7 @@ export async function renderKanban(projectId, filters = {}) {
     }
 
     board.innerHTML = '';
-    const isOwner = AppState.currentProject?._role === 'owner' || AppState.currentProject?.user_id === AppState.userId;
+    const isOwner = appState.currentProject?._role === 'owner' || appState.currentProject?.user_id === appState.userId;
 
     for (const col of STATUSES) {
       const colTasks = tasks.filter(t => t.status === col.id);
@@ -425,8 +424,8 @@ function autoScrollColumn(x, y) {
 }
 
 // ── Refresh board in place ────────────────────────────────────
-export async function refreshKanban() {
-  if (AppState.currentProjectId) {
-    await renderKanban(AppState.currentProjectId, _filters);
+export async function refreshKanban(appState = {}) {
+  if (appState.currentProjectId) {
+    await renderKanban(appState.currentProjectId, _filters, appState);
   }
 }

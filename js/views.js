@@ -5,13 +5,12 @@ import { getTasks, getMilestones, getSprints, getProfiles, getProjectMembers } f
 import { renderTaskCard, STATUSES, PRIORITIES, TASK_TYPES, getDueDateClass, formatShortDate } from './tasks.js';
 import { initials } from './auth.js';
 import { escHtml } from './projects.js';
-import { AppState } from './app.js';
 import { showToast } from './ui.js';
 
 // ══════════════════════════════════════════════════════════════
 // TABLE VIEW
 // ══════════════════════════════════════════════════════════════
-export async function renderTableView(projectId, filters = {}) {
+export async function renderTableView(projectId, filters = {}, appState = {}) {
   const container = document.getElementById('view-container');
   if (!container) return;
   container.innerHTML = `<div style="height:100%;overflow:auto;background:var(--surface)">
@@ -164,7 +163,7 @@ export async function renderTableView(projectId, filters = {}) {
 // ══════════════════════════════════════════════════════════════
 // UPCOMING VIEW
 // ══════════════════════════════════════════════════════════════
-export async function renderUpcomingView(projectId, filters = {}) {
+export async function renderUpcomingView(projectId, filters = {}, appState = {}) {
   const container = document.getElementById('view-container');
   if (!container) return;
 
@@ -253,7 +252,7 @@ function buildUpcomingRow(task) {
 // ══════════════════════════════════════════════════════════════
 // ROADMAP VIEW
 // ══════════════════════════════════════════════════════════════
-export async function renderRoadmapView(projectId) {
+export async function renderRoadmapView(projectId, appState = {}) {
   const container = document.getElementById('view-container');
   if (!container) return;
 
