@@ -69,6 +69,13 @@ async function bootApp(user) {
     await initTopbarAvatar(user);
     const projects = await loadProjectsSidebar();
     AppState.projects = projects;
+
+    // Initialize Filter Bar
+    const { renderFilterBar } = await import('./tasks.js');
+    renderFilterBar(AppState.filters, (newFilters) => {
+      AppState.filters = newFilters;
+      refreshCurrentView();
+    });
     
     if (projects.length > 0) {
       const lastId = localStorage.getItem('devtrack_active_pid');
@@ -228,6 +235,32 @@ async function markAllNotificationsRead() {
 }
 
 // ── Focus & Notes ────────────────────────────────────────────
+export async function togglePinTask(taskId) {
+  if (!AppState.currentProjectId || !AppState.currentProject) return;
+  
+  const focusIds = AppState.currentProject.today_focus || [];
+  const isPinned = focusIds.includes(taskId);
+  let newFocus;
+
+  if (isPinned) {
+    newFocus = focusIds.filter(id => id !== taskId);
+  } else {
+    if (focusIds.length >= 3) {
+      showToast('Maximum 3 tasks in focus', 'warning');
+      return;
+    }
+    newFocus = [...focusIds, taskId];
+  }
+
+  try {
+    const { updateProject } = await import('./supabase.js');
+    await updateProject(AppState.currentProjectId, { today_focus: newFocus });
+    AppState.currentProject.today_focus = newFocus;
+    renderFocusStrip(AppState.currentProject);
+    showToast(isPinned ? 'Removed from focus' : 'Pinned to focus', 'success');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
 function renderFocusStrip(project) {
   const strip = document.getElementById('focus-strip');
   if (!strip) return;

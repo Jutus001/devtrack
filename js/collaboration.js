@@ -20,7 +20,12 @@ export async function openTaskDetail(task) {
     <div class="panel-header">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
         <div style="font-size:16px;font-weight:600;color:var(--text);line-height:1.4">${escHtml(task.title)}</div>
-        <button class="panel-close-btn" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px">&times;</button>
+        <div style="display:flex;gap:8px">
+          <button id="btn-pin-task" class="btn btn-ghost btn-icon btn-sm" title="Pin to Today's Focus">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><polyline points="16.5 9.4 16.5 16.01"/><polyline points="10 12.8 10 19.41"/></svg>
+          </button>
+          <button class="panel-close-btn" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px">&times;</button>
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <span class="badge badge-accent">${task.status}</span>
@@ -84,6 +89,11 @@ export async function openTaskDetail(task) {
 
   // Wire events
   panel.querySelector('.panel-close-btn').onclick = () => panel.classList.remove('open');
+  
+  panel.querySelector('#btn-pin-task').onclick = async () => {
+    const { togglePinTask } = await import('./app.js');
+    await togglePinTask(task.id);
+  };
   
   const tabs = panel.querySelectorAll('.panel-tab');
   tabs.forEach(tab => {
