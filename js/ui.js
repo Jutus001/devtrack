@@ -130,24 +130,31 @@ export function confirm(title, message) {
 }
 
 // ── Loader ───────────────────────────────────────────────────
+// Ref counter so nested showLoading(true/false) calls don't race
+let _loadingCount = 0;
+
 export function showLoading(show) {
   let loader = document.getElementById('global-loader');
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'global-loader';
+    loader.innerHTML = `
+      <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">dev<span>track</span></div>
+      </div>
+    `;
+    document.body.appendChild(loader);
+  }
+
   if (show) {
-    if (!loader) {
-      loader = document.createElement('div');
-      loader.id = 'global-loader';
-      loader.innerHTML = `
-        <div class="loader-content">
-          <div class="loader-spinner"></div>
-          <div class="loader-text">dev<span>track</span></div>
-        </div>
-      `;
-      document.body.appendChild(loader);
+    _loadingCount++;
+    loader.classList.remove('hidden');
+    loader.classList.add('visible');
+  } else {
+    _loadingCount = Math.max(0, _loadingCount - 1);
+    if (_loadingCount === 0) {
+      loader.classList.remove('visible');
     }
-    loader.classList.remove('hidden'); // ensure not hidden by utility class
-    setTimeout(() => loader.classList.add('visible'), 10);
-  } else if (loader) {
-    loader.classList.remove('visible');
-    setTimeout(() => loader.remove(), 500);
   }
 }
