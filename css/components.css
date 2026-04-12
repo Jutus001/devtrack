@@ -226,8 +226,9 @@ textarea.form-input {
 .task-card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
   border-radius: var(--r2);
-  padding: 8px 10px;
+  padding: 9px 10px 8px 10px;
   cursor: pointer;
   position: relative;
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
@@ -236,35 +237,22 @@ textarea.form-input {
 }
 
 .task-card:hover {
-  border-color: var(--border-mid);
   box-shadow: var(--shadow-md);
+  border-top-color: var(--border-mid);
+  border-right-color: var(--border-mid);
+  border-bottom-color: var(--border-mid);
 }
 
 .task-card:hover .card-drag-handle { opacity: 1; }
 
-/* Blocker stripe */
-.task-card.is-blocker::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--red);
-  border-radius: var(--r3) 0 0 var(--r3);
-}
+/* Priority left accent */
+.task-card[data-priority="critical"] { border-left-color: var(--red); }
+.task-card[data-priority="high"]     { border-left-color: var(--amber); }
+.task-card[data-priority="medium"]   { border-left-color: var(--accent); }
+.task-card[data-priority="low"]      { border-left-color: var(--border); }
 
-/* Due date left border */
-.task-card.due-overdue { border-left: 3px solid var(--red); }
-.task-card.due-today   { border-left: 3px solid var(--amber); }
-.task-card.due-week    { border-left: 3px solid var(--accent); }
-
-.card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 5px;
-}
+/* Blocker: red stripe overrides priority */
+.task-card.is-blocker { border-left-color: var(--red) !important; }
 
 .card-drag-handle {
   opacity: 0;
@@ -272,45 +260,75 @@ textarea.form-input {
   color: var(--text-dim);
   transition: opacity var(--t-fast);
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 14px;
-  height: 14px;
+  top: 7px;
+  right: 7px;
 }
 
 .card-drag-handle:active { cursor: grabbing; }
 
+/* Title */
 .card-title {
-  flex: 1;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--text);
+  padding-right: 16px;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+/* Bottom row: type + due + tags / spacer / assignees */
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: nowrap;
   min-width: 0;
 }
 
-.card-meta {
+.card-type-icon {
+  flex-shrink: 0;
+  opacity: .6;
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 5px;
-  flex-wrap: wrap;
 }
 
-.card-footer {
+.card-due {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.card-due.overdue { color: var(--red); }
+.card-due.today   { color: var(--amber); }
+
+.card-tags-inline {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
+  gap: 3px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.card-tag-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+  opacity: .5;
+  cursor: default;
 }
 
 /* Progress bar */
 .progress-bar {
-  height: 3px;
+  height: 2px;
   background: var(--elevated);
   border-radius: var(--r-full);
   overflow: hidden;
-  margin-top: var(--s2);
+  margin-top: 7px;
 }
 
 .progress-fill {
@@ -321,13 +339,6 @@ textarea.form-input {
 }
 
 .progress-fill.complete { background: var(--green); }
-
-.progress-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-dim);
-  margin-top: 2px;
-}
 
 /* GitHub/GitLab badge */
 .repo-badge {
@@ -358,7 +369,7 @@ textarea.form-input {
   min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .kanban-column {
@@ -367,8 +378,7 @@ textarea.form-input {
   flex: 1;
   min-width: 160px;
   max-width: 300px;
-  max-height: 100%;
-  background: var(--surface);
+  background: var(--elevated);
   border: 1px solid var(--border);
   border-radius: var(--r2);
   overflow: hidden;
@@ -378,8 +388,7 @@ textarea.form-input {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  padding: 9px 10px 8px;
   flex-shrink: 0;
 }
 
@@ -388,18 +397,21 @@ textarea.form-input {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: .07em;
   flex: 1;
 }
 
 .col-count {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-dim);
+  background: var(--overlay);
+  padding: 1px 6px;
+  border-radius: var(--r-full);
 }
 
 .col-dot {
-  width: 8px; height: 8px;
+  width: 6px; height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -407,11 +419,11 @@ textarea.form-input {
 .kanban-cards {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 8px;
+  padding: 0 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-height: 60px;
+  gap: 5px;
+  min-height: 40px;
 }
 
 /* Drop indicator line */
@@ -447,26 +459,28 @@ textarea.form-input {
 }
 
 /* Column highlight when dragging over */
-.kanban-column.drag-over .kanban-cards {
+.kanban-column.drag-over {
+  border-color: var(--accent);
   background: var(--accent-dim);
-  border-radius: var(--r2);
 }
 
 /* Add task button in column */
 .col-add-btn {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  padding: 6px var(--s3);
-  font-size: 12px;
+  gap: 5px;
+  padding: 6px 10px;
+  font-size: 11px;
   color: var(--text-dim);
   cursor: pointer;
-  border-top: 1px solid var(--border);
   transition: all var(--t-fast);
   flex-shrink: 0;
+  opacity: 0;
+  font-family: var(--font-mono);
 }
 
-.col-add-btn:hover { color: var(--accent); background: var(--accent-dim); }
+.kanban-column:hover .col-add-btn { opacity: 1; }
+.col-add-btn:hover { color: var(--accent); }
 
 /* ══════════════════════════════════════════
    MODALS

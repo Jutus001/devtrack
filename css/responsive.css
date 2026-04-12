@@ -63,8 +63,10 @@
   }
 
   .kanban-column {
-    width: 260px;
-    min-width: 260px;
+    flex: none;
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
   }
 
   /* Table view: hide some columns */
@@ -108,8 +110,10 @@
   }
 
   .kanban-column {
+    flex: none;
     width: 82vw;
     min-width: 82vw;
+    max-width: 82vw;
   }
 
   /* Modals: full-screen */

@@ -467,96 +467,83 @@ export async function deleteTaskWithConfirm(task) {
 export async function renderTaskCard(task, opts = {}) {
   const dueCls = getDueDateClass(task.due_date);
   const typeConf = TASK_TYPES[task.task_type] || TASK_TYPES.feature;
-  const priorityConf = PRIORITIES.find(p => p.id === task.priority) || PRIORITIES[2];
+  const priority = task.priority || 'medium';
 
-  // Checklist & Subtask progress
+  // Progress bar
   let progressHtml = '';
   const checkTotal = (task._checklist || []).length;
-  const subTotal = (task._subtasks || []).length;
-  
-  if (checkTotal > 0 || subTotal > 0) {
-    const checkDone = (task._checklist || []).filter(c => c.done).length;
-    const subDone = (task._subtasks || []).filter(s => s.status === 'done').length;
-    const total = checkTotal + subTotal;
-    const done = checkDone + subDone;
-    const pct = Math.round((done / total) * 100);
-    progressHtml = `
-      <div class="progress-bar" title="${done}/${total} done" style="margin-top:6px">
-        <div class="progress-fill ${pct === 100 ? 'complete' : ''}" style="width:${pct}%"></div>
-      </div>
-    `;
+  const subTotal   = (task._subtasks  || []).length;
+  if (checkTotal + subTotal > 0) {
+    const done = (task._checklist || []).filter(c => c.done).length
+               + (task._subtasks  || []).filter(s => s.status === 'done').length;
+    const pct = Math.round((done / (checkTotal + subTotal)) * 100);
+    progressHtml = `<div class="progress-bar" title="${done}/${checkTotal + subTotal} done">
+      <div class="progress-fill ${pct === 100 ? 'complete' : ''}" style="width:${pct}%"></div>
+    </div>`;
   }
 
-  // Creator Avatar
-  let creatorHtml = '';
-  if (task.user_id && opts.profiles) {
-    const p = opts.profiles[task.user_id];
-    creatorHtml = `
-      <div class="avatar avatar-xs" style="background:${p?.avatar_color || '#4f8eff'};color:#fff;border:1px solid var(--border)" title="Created by: ${escHtml(p?.display_name || 'Unknown')}">
-        ${initials(p?.display_name || '?')}
-      </div>
-    `;
-  }
-
-  // Assignee avatars
+  // Assignees only (no creator)
   let assigneeHtml = '';
-  if (task.assignees && task.assignees.length > 0 && opts.profiles) {
-    const shown = task.assignees.slice(0, 3);
-    const extra = task.assignees.length - 3;
-    assigneeHtml = `<div class="avatar-group">
+  if (task.assignees?.length > 0 && opts.profiles) {
+    const shown = task.assignees.slice(0, 2);
+    const extra = task.assignees.length - 2;
+    assigneeHtml = `<div class="avatar-group" style="margin-left:auto;flex-shrink:0">
       ${extra > 0 ? `<div class="avatar avatar-xs avatar-overflow">+${extra}</div>` : ''}
       ${shown.map(uid => {
         const p = opts.profiles[uid];
-        return `<div class="avatar avatar-xs" style="background:${p?.avatar_color || '#4f8eff'};color:#fff" title="Assignee: ${escHtml(p?.display_name || '')}">
+        return `<div class="avatar avatar-xs" style="background:${p?.avatar_color || '#4f8eff'};color:#fff" title="${escHtml(p?.display_name || '')}">
           ${initials(p?.display_name || '?')}
         </div>`;
       }).reverse().join('')}
     </div>`;
   }
 
-  // Tags
-  const tagsHtml = (task.tags || []).slice(0, 3).map(t =>
-    `<span class="tag-pill">${escHtml(t)}</span>`
+  // Due date — plain text, colour-coded
+  const dueHtml = task.due_date
+    ? `<span class="card-due ${dueCls === 'due-overdue' ? 'overdue' : dueCls === 'due-today' ? 'today' : ''}">${formatShortDate(task.due_date)}</span>`
+    : '';
+
+  // Tags — tiny dots with tooltip
+  const tagDots = (task.tags || []).slice(0, 4).map(t =>
+    `<span class="card-tag-dot" title="${escHtml(t)}"></span>`
   ).join('');
 
-  // GitHub badge
+  // GitHub link — icon only
   const githubHtml = task.github_url
-    ? `<a href="${escHtml(task.github_url)}" target="_blank" rel="noopener" class="repo-badge" onclick="event.stopPropagation()">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.56 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        ${getRepoName(task.github_url)}
+    ? `<a href="${escHtml(task.github_url)}" target="_blank" rel="noopener" title="${escHtml(task.github_url)}"
+         style="color:var(--text-dim);display:flex;align-items:center;flex-shrink:0;margin-left:2px" onclick="event.stopPropagation()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.56 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
       </a>`
     : '';
 
+  const hasBottomRow = dueHtml || tagDots || assigneeHtml || githubHtml;
+
   return `
-    <div class="task-card ${task.is_blocker ? 'is-blocker' : ''} ${dueCls}"
+    <div class="task-card ${task.is_blocker ? 'is-blocker' : ''}"
          data-task-id="${task.id}"
-         data-status="${task.status}">
+         data-status="${task.status}"
+         data-priority="${priority}">
 
       <div class="card-drag-handle" aria-label="Drag task">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="9" cy="6" r="1" fill="currentColor"/><circle cx="15" cy="6" r="1" fill="currentColor"/>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/>
           <circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/>
-          <circle cx="9" cy="18" r="1" fill="currentColor"/><circle cx="15" cy="18" r="1" fill="currentColor"/>
+          <circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/>
         </svg>
       </div>
 
-      <div class="card-header">
-        <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color};flex-shrink:0">${typeConf.svg}</span>
-        <div class="card-title">${escHtml(task.title)}</div>
-        ${task.is_blocker ? `<span style="font-size:9px;font-family:var(--font-mono);color:var(--red);font-weight:700;flex-shrink:0">BLOCK</span>` : ''}
-      </div>
+      <div class="card-title">${escHtml(task.title)}</div>
 
-      <div class="card-meta">
-        <span class="badge badge-default" data-priority="${task.priority}" style="font-size:10px">
-          <span class="priority-dot"></span>${priorityConf.label}
-        </span>
-        ${task.due_date ? `<span class="badge ${dueCls === 'due-overdue' ? 'badge-red' : dueCls === 'due-today' ? 'badge-amber' : 'badge-accent'}" style="font-size:10px">${formatShortDate(task.due_date)}</span>` : ''}
-        ${tagsHtml}
-      </div>
+      ${hasBottomRow ? `
+      <div class="card-row">
+        <span class="card-type-icon" style="color:${typeConf.color}" title="${typeConf.label}">${typeConf.svg}</span>
+        ${dueHtml}
+        ${tagDots ? `<div class="card-tags-inline">${tagDots}</div>` : ''}
+        ${githubHtml}
+        ${assigneeHtml}
+      </div>` : ''}
 
       ${progressHtml}
-
-      ${(assigneeHtml || creatorHtml || githubHtml) ? `<div class="card-footer">${creatorHtml}${assigneeHtml}<div style="flex:1"></div>${githubHtml}</div>` : ''}
     </div>
   `;
 }
