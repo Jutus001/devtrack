@@ -511,7 +511,10 @@ function setupCommandPalette() {
       e.preventDefault();
       toggleCommandPalette();
     }
-    if (e.key === 'Escape') hideCommandPalette();
+    if (e.key === 'Escape') {
+      hideCommandPalette();
+      if (document.getElementById('sidebar')?.classList.contains('open')) closeMobileSidebar();
+    }
   });
 }
 

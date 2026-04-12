@@ -38,7 +38,7 @@ export async function openTaskDetail(task) {
     
     <div class="panel-tabs">
       <button class="panel-tab active" data-tab="overview">Overview</button>
-      ${task.prompt ? '<button class="panel-tab" data-tab="prompt">Prompt</button>' : ''}
+      <button class="panel-tab" data-tab="prompt">Prompt</button>
       <button class="panel-tab" data-tab="checklist">Checklist</button>
       <button class="panel-tab" data-tab="subtasks">Subtasks</button>
       <button class="panel-tab" data-tab="comments">Comments</button>
@@ -59,18 +59,19 @@ export async function openTaskDetail(task) {
         ` : ''}
         ${task.task_type === 'bug' ? renderBugFields(task.bug_fields) : ''}
       </div>
-      ${task.prompt ? `
       <div id="panel-tab-prompt" class="tab-content">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="font-size:11px;font-family:var(--font-mono);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)">AI Prompt</div>
-          <button id="btn-copy-prompt" class="btn btn-ghost btn-sm" style="font-size:11px;display:flex;align-items:center;gap:5px">
+          ${task.prompt ? `<button id="btn-copy-prompt" class="btn btn-ghost btn-sm" style="font-size:11px;display:flex;align-items:center;gap:5px">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copy
-          </button>
+          </button>` : ''}
         </div>
-        <pre style="font-family:var(--font-mono);font-size:12px;line-height:1.65;color:var(--text);background:var(--elevated);border:1px solid var(--border);border-radius:var(--r2);padding:14px;white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow-y:auto;margin:0">${escHtml(task.prompt)}</pre>
+        ${task.prompt
+          ? `<pre style="font-family:var(--font-mono);font-size:12px;line-height:1.65;color:var(--text);background:var(--elevated);border:1px solid var(--border);border-radius:var(--r2);padding:14px;white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow-y:auto;margin:0">${escHtml(task.prompt)}</pre>`
+          : `<div class="empty-state" style="padding:40px 0"><p>No prompt added yet.<br>Edit the task to add one.</p></div>`
+        }
       </div>
-      ` : ''}
       <div id="panel-tab-checklist" class="tab-content">
         <div id="checklist-list">Loading...</div>
         <div class="input-group" style="margin-top:16px;display:flex;gap:8px">
