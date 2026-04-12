@@ -451,3 +451,10 @@ BEGIN
   RETURN json_build_object('id', v_id, 'name', v_name, 'user_id', v_owner);
 END;
 $$;
+
+-- ── Backfill join codes for existing projects ─────────────────
+-- Run once to give all projects that pre-date the invite feature a code.
+-- Safe to re-run (only updates rows where join_code IS NULL).
+UPDATE projects
+   SET join_code = generate_join_code()
+ WHERE join_code IS NULL;

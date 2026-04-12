@@ -6,7 +6,7 @@ import {
   joinProjectByCode, getProjectMembers, removeProjectMember,
   getMilestones, createMilestone, updateMilestone, deleteMilestone,
   getSprints, createSprint, updateSprint, deleteSprint,
-  getProfiles, logActivity
+  getProfiles, logActivity, generateCode
 } from './supabase.js';
 import { showToast, openModal, closeModal, confirm } from './ui.js';
 import { initials } from './auth.js';
@@ -338,6 +338,26 @@ export async function openMembersModal(project) {
   const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
   const { data: { user: currentUser } } = await import('./supabase.js').then(m => m.supabase.auth.getUser());
   const isOwner = project._role === 'owner' || project.user_id === currentUser?.id;
+
+  // Auto-generate a join code for projects that pre-date the invite feature
+  if (isOwner && !project.join_code) {
+    let attempts = 0;
+    while (attempts < 5) {
+      const newCode = generateCode();
+      try {
+        const updated = await updateProject(project.id, { join_code: newCode });
+        project.join_code = updated.join_code || newCode;
+        // Sync into AppState so the rest of the app sees it
+        import('./app.js').then(m => {
+          const ap = m.AppState?.projects?.find(p => p.id === project.id);
+          if (ap) ap.join_code = project.join_code;
+        });
+        break;
+      } catch (_) {
+        attempts++;
+      }
+    }
+  }
 
   const membersHtml = members.map(m => {
     const p = profileMap[m.user_id] || {};
