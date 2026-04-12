@@ -226,11 +226,11 @@ textarea.form-input {
 .task-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r3);
-  padding: var(--s3);
+  border-radius: var(--r2);
+  padding: 8px 10px;
   cursor: pointer;
   position: relative;
-  transition: border-color var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
   user-select: none;
   touch-action: none;
 }
@@ -262,8 +262,8 @@ textarea.form-input {
 .card-header {
   display: flex;
   align-items: flex-start;
-  gap: var(--s2);
-  margin-bottom: var(--s2);
+  gap: 6px;
+  margin-bottom: 5px;
 }
 
 .card-drag-handle {
@@ -271,17 +271,20 @@ textarea.form-input {
   cursor: grab;
   color: var(--text-dim);
   transition: opacity var(--t-fast);
-  flex-shrink: 0;
-  margin-top: 1px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 14px;
+  height: 14px;
 }
 
 .card-drag-handle:active { cursor: grabbing; }
 
 .card-title {
   flex: 1;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.4;
   color: var(--text);
   min-width: 0;
 }
@@ -289,16 +292,16 @@ textarea.form-input {
 .card-meta {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  margin-top: var(--s2);
+  gap: 4px;
+  margin-top: 5px;
   flex-wrap: wrap;
 }
 
 .card-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: var(--s2);
+  gap: 4px;
+  margin-top: 6px;
 }
 
 /* Progress bar */
@@ -349,8 +352,8 @@ textarea.form-input {
 ══════════════════════════════════════════ */
 #kanban-board {
   display: flex;
-  gap: var(--s4);
-  padding: var(--s4);
+  gap: 10px;
+  padding: 12px;
   flex: 1;
   min-height: 0;
   overflow-x: auto;
@@ -361,12 +364,12 @@ textarea.form-input {
 .kanban-column {
   display: flex;
   flex-direction: column;
-  width: 280px;
-  min-width: 280px;
+  width: 250px;
+  min-width: 250px;
   max-height: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r3);
+  border-radius: var(--r2);
   overflow: hidden;
 }
 
@@ -374,7 +377,7 @@ textarea.form-input {
   display: flex;
   align-items: center;
   gap: var(--s2);
-  padding: var(--s3) var(--s3) var(--s3);
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -403,10 +406,10 @@ textarea.form-input {
 .kanban-cards {
   flex: 1;
   overflow-y: auto;
-  padding: var(--s2) var(--s3);
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: var(--s2);
+  gap: 6px;
   min-height: 60px;
 }
 
@@ -496,7 +499,7 @@ textarea.form-input {
 .modal-xs  { max-width: 320px; }
 .modal-sm  { max-width: 420px; }
 .modal-md  { max-width: 560px; }
-.modal-lg  { max-width: 720px; }
+.modal-lg  { max-width: 780px; min-height: min(620px, 88dvh); }
 
 .modal-header {
   display: flex;

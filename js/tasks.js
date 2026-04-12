@@ -115,7 +115,7 @@ export async function openCreateTaskModal(projectId, defaultStatus = 'todo', def
     id: 'modal-create-task',
     title: 'New Task',
     body,
-    size: 'md',
+    size: 'lg',
     primaryLabel: 'Create Task',
     onPrimary: async () => {
       const title = document.getElementById('tf-title').value.trim();
@@ -202,7 +202,7 @@ export async function openEditTaskModal(task) {
     id: 'modal-edit-task',
     title: 'Edit Task',
     body,
-    size: 'md',
+    size: 'lg',
     primaryLabel: 'Save Changes',
     onPrimary: async () => {
       const title = document.getElementById('tf-title').value.trim();
@@ -279,134 +279,145 @@ function buildTaskForm({ milestones = [], sprints = [], memberProfiles = [], def
   const bf = d.bug_fields || {};
 
   return `
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="form-group">
-        <label class="form-label">Title *</label>
-        <input class="form-input" id="tf-title" value="${escHtml(d.title || '')}" placeholder="Task title…" required />
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:0">
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <!-- LEFT COLUMN -->
+      <div style="display:flex;flex-direction:column;gap:12px;padding-right:16px;border-right:1px solid var(--border)">
         <div class="form-group">
-          <label class="form-label">Type</label>
-          <select class="form-input form-select" id="tf-type">
-            ${Object.entries(TASK_TYPES).map(([id, t]) =>
-              `<option value="${id}" ${d.task_type === id ? 'selected' : ''}>${t.label}</option>`
-            ).join('')}
-          </select>
+          <label class="form-label">Title *</label>
+          <input class="form-input" id="tf-title" value="${escHtml(d.title || '')}" placeholder="Task title…" required />
         </div>
+
         <div class="form-group">
-          <label class="form-label">Status</label>
-          <select class="form-input form-select" id="tf-status">
-            ${STATUSES.map(s =>
-              `<option value="${s.id}" ${(d.status || 'todo') === s.id ? 'selected' : ''}>${s.label}</option>`
-            ).join('')}
-          </select>
+          <label class="form-label">Description</label>
+          <textarea class="form-input" id="tf-desc" rows="3" placeholder="What needs to be done?">${escHtml(d.description || '')}</textarea>
         </div>
-        <div class="form-group">
-          <label class="form-label">Priority</label>
-          <select class="form-input form-select" id="tf-priority">
-            ${PRIORITIES.map(p =>
-              `<option value="${p.id}" ${(d.priority || 'medium') === p.id ? 'selected' : ''}>${p.label}</option>`
-            ).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Due Date</label>
-          <input class="form-input" id="tf-due" type="date" value="${d.due_date || ''}" />
-        </div>
-      </div>
 
-      <div class="form-group">
-        <label class="form-label">Description</label>
-        <textarea class="form-input" id="tf-desc" rows="3" placeholder="What needs to be done?">${escHtml(d.description || '')}</textarea>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group">
-          <label class="form-label">Milestone</label>
-          <select class="form-input form-select" id="tf-milestone">
-            <option value="">None</option>
-            ${milestones.map(m =>
-              `<option value="${m.id}" ${d.milestone_id === m.id ? 'selected' : ''}>${escHtml(m.name)}</option>`
-            ).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Sprint</label>
-          <select class="form-input form-select" id="tf-sprint">
-            <option value="">None</option>
-            ${sprints.map(s =>
-              `<option value="${s.id}" ${d.sprint_id === s.id ? 'selected' : ''}>${escHtml(s.name)}</option>`
-            ).join('')}
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Tags (comma separated)</label>
-        <input class="form-input" id="tf-tags" value="${(d.tags || []).join(', ')}" placeholder="frontend, api, urgent…" />
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">GitHub / GitLab URL</label>
-        <input class="form-input" id="tf-github" type="url" value="${escHtml(d.github_url || '')}" placeholder="https://github.com/…/issues/123" />
-      </div>
-
-      ${memberProfiles.length > 0 ? `
-      <div class="form-group">
-        <label class="form-label">Assignees</label>
-        <div id="tf-assignees" style="display:flex;flex-wrap:wrap;gap:8px">
-          ${memberProfiles.map(p => `
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
-              <input type="checkbox" value="${p.id}" ${(d.assignees || []).includes(p.id) ? 'checked' : ''} />
-              <span class="avatar avatar-xs" style="background:${p.avatar_color||'#4f8eff'};color:#fff">${initials(p.display_name)}</span>
-              ${escHtml(p.display_name || 'User')}
-            </label>
-          `).join('')}
-        </div>
-      </div>
-      ` : ''}
-
-      <div class="form-group">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
-          <input type="checkbox" id="tf-blocker" ${d.is_blocker ? 'checked' : ''} />
-          <span style="color:var(--red);font-weight:500">Mark as Blocker</span>
-          <span style="font-size:11px;color:var(--text-dim)">(shows red stripe on card)</span>
-        </label>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Notes</label>
-        <textarea class="form-input" id="tf-notes" rows="3" placeholder="Internal notes, context, links…">${escHtml(d.notes || '')}</textarea>
-      </div>
-
-      <!-- Bug fields (shown only when type = bug) -->
-      <div id="tf-bug-section" style="display:none;border-top:1px solid var(--border);padding-top:14px">
-        <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:12px">Bug Report Fields</div>
-        <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="form-group">
-            <label class="form-label">Steps to Reproduce</label>
-            <textarea class="form-input" id="tf-bug-steps" rows="3" placeholder="1. Go to...\n2. Click on...\n3. See error">${escHtml(bf.steps || '')}</textarea>
+            <label class="form-label">Type</label>
+            <select class="form-input form-select" id="tf-type">
+              ${Object.entries(TASK_TYPES).map(([id, t]) =>
+                `<option value="${id}" ${d.task_type === id ? 'selected' : ''}>${t.label}</option>`
+              ).join('')}
+            </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Expected Behavior</label>
-            <textarea class="form-input" id="tf-bug-expected" rows="2" placeholder="What should happen?">${escHtml(bf.expected || '')}</textarea>
+            <label class="form-label">Status</label>
+            <select class="form-input form-select" id="tf-status">
+              ${STATUSES.map(s =>
+                `<option value="${s.id}" ${(d.status || 'todo') === s.id ? 'selected' : ''}>${s.label}</option>`
+              ).join('')}
+            </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Actual Behavior</label>
-            <textarea class="form-input" id="tf-bug-actual" rows="2" placeholder="What actually happens?">${escHtml(bf.actual || '')}</textarea>
+            <label class="form-label">Priority</label>
+            <select class="form-input form-select" id="tf-priority">
+              ${PRIORITIES.map(p =>
+                `<option value="${p.id}" ${(d.priority || 'medium') === p.id ? 'selected' : ''}>${p.label}</option>`
+              ).join('')}
+            </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Environment</label>
-            <input class="form-input" id="tf-bug-env" value="${escHtml(bf.environment || '')}" placeholder="OS, browser, version…" />
+            <label class="form-label">Due Date</label>
+            <input class="form-input" id="tf-due" type="date" value="${d.due_date || ''}" />
           </div>
+        </div>
+
+        ${memberProfiles.length > 0 ? `
+        <div class="form-group">
+          <label class="form-label">Assignees</label>
+          <div id="tf-assignees" style="display:flex;flex-wrap:wrap;gap:6px">
+            ${memberProfiles.map(p => `
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r-full);transition:all var(--t-fast)"
+                     onmouseenter="this.style.borderColor='var(--accent)'"
+                     onmouseleave="this.style.borderColor=this.querySelector('input').checked?'var(--accent)':'var(--border)'">
+                <input type="checkbox" value="${p.id}" style="display:none" ${(d.assignees || []).includes(p.id) ? 'checked' : ''}
+                       onchange="this.closest('label').style.borderColor=this.checked?'var(--accent)':'var(--border)';this.closest('label').style.background=this.checked?'var(--accent-dim)':''" />
+                <span class="avatar avatar-xs" style="background:${p.avatar_color||'#4f8eff'};color:#fff">${initials(p.display_name)}</span>
+                ${escHtml(p.display_name || 'User')}
+              </label>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-input" id="tf-notes" rows="2" placeholder="Context, links, internal notes…">${escHtml(d.notes || '')}</textarea>
         </div>
       </div>
 
-      <!-- AI Prompt section -->
-      <div style="border-top:1px solid var(--border);padding-top:14px">
-        <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px">AI Prompt</div>
-        <textarea class="form-input" id="tf-prompt" rows="5" placeholder="Paste your AI prompt, system instructions, or context here…" style="font-family:var(--font-mono);font-size:12px;line-height:1.6;resize:vertical">${escHtml(d.prompt || '')}</textarea>
+      <!-- RIGHT COLUMN -->
+      <div style="display:flex;flex-direction:column;gap:12px;padding-left:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group">
+            <label class="form-label">Milestone</label>
+            <select class="form-input form-select" id="tf-milestone">
+              <option value="">None</option>
+              ${milestones.map(m =>
+                `<option value="${m.id}" ${d.milestone_id === m.id ? 'selected' : ''}>${escHtml(m.name)}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sprint</label>
+            <select class="form-input form-select" id="tf-sprint">
+              <option value="">None</option>
+              ${sprints.map(s =>
+                `<option value="${s.id}" ${d.sprint_id === s.id ? 'selected' : ''}>${escHtml(s.name)}</option>`
+              ).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tags <span style="font-weight:400;text-transform:none;letter-spacing:0">(comma separated)</span></label>
+          <input class="form-input" id="tf-tags" value="${(d.tags || []).join(', ')}" placeholder="frontend, api, urgent…" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">GitHub / GitLab URL</label>
+          <input class="form-input" id="tf-github" type="url" value="${escHtml(d.github_url || '')}" placeholder="https://github.com/…/issues/123" />
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px">
+            <input type="checkbox" id="tf-blocker" ${d.is_blocker ? 'checked' : ''} />
+            <span style="color:var(--red);font-weight:500">Mark as Blocker</span>
+          </label>
+        </div>
+
+        <!-- AI Prompt -->
+        <div class="form-group" style="flex:1">
+          <label class="form-label" style="color:var(--accent)">AI Prompt</label>
+          <textarea class="form-input" id="tf-prompt" rows="5" placeholder="Paste your AI prompt or context here…" style="font-family:var(--font-mono);font-size:12px;line-height:1.6;resize:vertical;flex:1">${escHtml(d.prompt || '')}</textarea>
+        </div>
+
+        <!-- Bug fields (shown only when type = bug) -->
+        <div id="tf-bug-section" style="display:none">
+          <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--red);margin-bottom:10px">Bug Report</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="form-group">
+              <label class="form-label">Steps to Reproduce</label>
+              <textarea class="form-input" id="tf-bug-steps" rows="2" placeholder="1. Go to…">${escHtml(bf.steps || '')}</textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="form-group">
+                <label class="form-label">Expected</label>
+                <textarea class="form-input" id="tf-bug-expected" rows="2" placeholder="What should happen?">${escHtml(bf.expected || '')}</textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Actual</label>
+                <textarea class="form-input" id="tf-bug-actual" rows="2" placeholder="What happened?">${escHtml(bf.actual || '')}</textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Environment</label>
+              <input class="form-input" id="tf-bug-env" value="${escHtml(bf.environment || '')}" placeholder="OS, browser, version…" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -445,14 +456,9 @@ export async function renderTaskCard(task, opts = {}) {
     const total = checkTotal + subTotal;
     const done = checkDone + subDone;
     const pct = Math.round((done / total) * 100);
-    
     progressHtml = `
-      <div class="progress-bar" title="${done}/${total} combined progress">
+      <div class="progress-bar" title="${done}/${total} done" style="margin-top:6px">
         <div class="progress-fill ${pct === 100 ? 'complete' : ''}" style="width:${pct}%"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:9px;font-family:var(--font-mono);color:var(--text-dim);margin-top:2px">
-        <span>${checkTotal > 0 ? `Checklist: ${checkDone}/${checkTotal}` : ''}</span>
-        <span>${subTotal > 0 ? `Subtasks: ${subDone}/${subTotal}` : ''}</span>
       </div>
     `;
   }
@@ -511,39 +517,22 @@ export async function renderTaskCard(task, opts = {}) {
       </div>
 
       <div class="card-header">
-        ${creatorHtml}
+        <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color};flex-shrink:0">${typeConf.svg}</span>
         <div class="card-title">${escHtml(task.title)}</div>
+        ${task.is_blocker ? `<span style="font-size:9px;font-family:var(--font-mono);color:var(--red);font-weight:700;flex-shrink:0">BLOCK</span>` : ''}
       </div>
 
-      ${task.description ? `<div style="font-size:11px;color:var(--text-muted);line-height:1.5;margin-bottom:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(task.description)}</div>` : ''}
-
       <div class="card-meta">
-        <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color}">${typeConf.svg} ${typeConf.label}</span>
-        <span class="badge badge-default" data-priority="${task.priority}">
+        <span class="badge badge-default" data-priority="${task.priority}" style="font-size:10px">
           <span class="priority-dot"></span>${priorityConf.label}
         </span>
-        ${task.due_date ? `<span class="badge ${dueCls === 'due-overdue' ? 'badge-red' : dueCls === 'due-today' ? 'badge-amber' : 'badge-accent'}" style="font-size:10px">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          ${formatShortDate(task.due_date)}
-        </span>` : ''}
+        ${task.due_date ? `<span class="badge ${dueCls === 'due-overdue' ? 'badge-red' : dueCls === 'due-today' ? 'badge-amber' : 'badge-accent'}" style="font-size:10px">${formatShortDate(task.due_date)}</span>` : ''}
         ${tagsHtml}
       </div>
 
       ${progressHtml}
 
-      <div class="card-footer">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          ${githubHtml}
-          ${task.task_type === 'bug' ? '<span class="badge badge-red" style="padding:2px 4px;font-size:9px">BUG FIELDS</span>' : ''}
-          ${task.prompt ? `<span class="badge" style="padding:2px 5px;font-size:9px;background:var(--accent-dim,#4f8eff22);color:var(--accent)" title="Has AI Prompt">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            PROMPT
-          </span>` : ''}
-        </div>
-        ${assigneeHtml}
-      </div>
-
-      ${task.is_blocker ? `<div style="position:absolute;top:4px;right:6px;font-size:8px;font-family:var(--font-mono);color:var(--red);font-weight:800;background:var(--red-dim);padding:0 4px;border-radius:2px">BLOCKED</div>` : ''}
+      ${(assigneeHtml || creatorHtml || githubHtml) ? `<div class="card-footer">${creatorHtml}${assigneeHtml}<div style="flex:1"></div>${githubHtml}</div>` : ''}
     </div>
   `;
 }

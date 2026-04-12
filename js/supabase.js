@@ -229,9 +229,12 @@ export async function archiveTask(id) {
 
 // Reorder tasks in a column (update positions)
 export async function reorderTasks(tasks) {
-  const updates = tasks.map((t, i) => ({ id: t.id, position: i * 100, status: t.status }));
-  const { error } = await supabase.from('tasks').upsert(updates, { onConflict: 'id' });
-  if (error) throw error;
+  if (!tasks.length) return;
+  // Use individual UPDATEs instead of upsert — upsert can fail RLS WITH CHECK
+  // when the task was created by a different user (member vs owner).
+  await Promise.all(tasks.map((t, i) =>
+    supabase.from('tasks').update({ position: i * 100, status: t.status }).eq('id', t.id)
+  ));
 }
 
 // ══════════════════════════════════════════════════════════════

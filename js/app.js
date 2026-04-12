@@ -155,6 +155,7 @@ export async function switchProject(projectId) {
   document.getElementById('no-project').style.display = 'none';
   document.getElementById('project-view').style.display = 'flex';
   document.getElementById('btn-add-task').style.display = '';
+  document.getElementById('btn-export').style.display = '';
 
   await refreshCurrentView();
 }
@@ -171,28 +172,28 @@ function ensureProjectViewStructure() {
         <p>Select a project from the sidebar or create a new one to get started with your tasks.</p>
       </div>
       <div id="project-view" style="display:none;height:100%;flex-direction:column;overflow:hidden">
-        <div id="project-header" style="padding:var(--s4);border-bottom:1px solid var(--border);background:var(--surface)">
-          <div style="display:flex;gap:16px;margin-top:8px">
-            <div id="left-off-sticky" style="flex:1;background:var(--amber-dim);border:1px solid var(--amber);padding:12px;border-radius:var(--r2);position:relative">
-              <div style="font-size:10px;font-family:var(--font-mono);color:var(--amber);text-transform:uppercase;margin-bottom:4px;font-weight:700;display:flex;justify-content:space-between">
-                <span>Where I left off</span>
-                <button id="btn-save-wilo" style="background:none;border:none;color:var(--amber);cursor:pointer;font-size:10px;font-weight:700">SAVE</button>
-              </div>
-              <div id="left-off-text" contenteditable="true" style="font-size:13px;color:var(--text);outline:none;min-height:20px">Click to add a note...</div>
-            </div>
-            <div id="decision-log-box" style="flex:1;background:var(--elevated);border:1px solid var(--border);padding:12px;border-radius:var(--r2);cursor:pointer">
-              <div style="font-size:10px;font-family:var(--font-mono);color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;font-weight:700">Decision Log (Markdown)</div>
-              <div style="font-size:12px;color:var(--text-muted)">Keep track of architectural decisions and notes. Click to open.</div>
-            </div>
-          </div>
+        <div id="project-header" style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" style="flex-shrink:0"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span id="left-off-text" contenteditable="true" style="flex:1;font-size:12px;color:var(--text-muted);outline:none;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-placeholder="Note where you left off…"></span>
+          <button id="btn-save-wilo" class="btn btn-ghost btn-sm" style="font-size:11px;opacity:0;pointer-events:none;flex-shrink:0">Save</button>
+          <button id="decision-log-box" class="btn btn-ghost btn-sm" style="font-size:11px;flex-shrink:0;gap:5px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Log
+          </button>
         </div>
         <div id="kanban-board"></div>
       </div>
     `;
     // Re-bind notes/decisions events after restoring structure
+    document.getElementById('left-off-text')?.addEventListener('input', () => {
+      const btn = document.getElementById('btn-save-wilo');
+      if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = ''; }
+    });
     document.getElementById('btn-save-wilo')?.addEventListener('click', () => {
-      const text = document.getElementById('left-off-text').innerText;
-      saveLeftOff(text);
+      const el = document.getElementById('left-off-text');
+      saveLeftOff(el?.innerText?.trim() || '');
+      const btn = document.getElementById('btn-save-wilo');
+      if (btn) { btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; }
     });
     document.getElementById('decision-log-box')?.addEventListener('click', openDecisionLogModal);
   }
@@ -285,7 +286,84 @@ export function setMobileNavActive(tab) {
   document.getElementById(`mobile-nav-${tab}`)?.classList.add('active');
 }
 
+function exportTasks() {
+  const tasks = AppState.tasks;
+  const project = AppState.currentProject;
+  if (!tasks?.length) { showToast('No tasks to export', 'warning'); return; }
+
+  // Show format picker
+  import('./ui.js').then(({ openModal, closeModal }) => {
+    openModal({
+      id: 'modal-export',
+      title: 'Export Tasks',
+      body: `
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <p style="font-size:13px;color:var(--text-muted)">${tasks.length} task${tasks.length !== 1 ? 's' : ''} from <strong>${project?.name || 'this project'}</strong></p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button id="exp-json" class="btn btn-secondary" style="flex-direction:column;padding:16px;height:auto;gap:6px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span style="font-size:13px;font-weight:600">JSON</span>
+              <span style="font-size:11px;color:var(--text-dim)">Full data, all fields</span>
+            </button>
+            <button id="exp-csv" class="btn btn-secondary" style="flex-direction:column;padding:16px;height:auto;gap:6px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+              <span style="font-size:13px;font-weight:600">CSV</span>
+              <span style="font-size:11px;color:var(--text-dim)">Spreadsheet-ready</span>
+            </button>
+          </div>
+        </div>
+      `,
+      size: 'sm',
+      primaryLabel: null,
+    });
+    setTimeout(() => {
+      document.getElementById('exp-json')?.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });
+        _downloadBlob(blob, `${project?.name || 'devtrack'}-tasks.json`);
+        closeModal('modal-export');
+      });
+      document.getElementById('exp-csv')?.addEventListener('click', () => {
+        const cols = ['id','title','task_type','status','priority','due_date','description','notes','tags','github_url','created_at'];
+        const header = cols.join(',');
+        const rows = tasks.map(t => cols.map(c => {
+          const v = Array.isArray(t[c]) ? t[c].join(';') : (t[c] ?? '');
+          return `"${String(v).replace(/"/g, '""')}"`;
+        }).join(','));
+        const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+        _downloadBlob(blob, `${project?.name || 'devtrack'}-tasks.csv`);
+        closeModal('modal-export');
+      });
+    }, 50);
+  });
+}
+
+function _downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Downloaded', 'success');
+}
+
 function setupGlobalEvents() {
+  // Sidebar collapse (desktop)
+  const collapseBtn = document.getElementById('sidebar-collapse-btn');
+  if (collapseBtn) {
+    const app = document.getElementById('app');
+    const isCollapsed = localStorage.getItem('devtrack_sidebar_collapsed') === '1';
+    if (isCollapsed) {
+      app?.classList.add('sidebar-collapsed');
+      collapseBtn.querySelector('svg')?.setAttribute('transform', 'rotate(180)');
+    }
+    collapseBtn.addEventListener('click', () => {
+      const collapsed = app?.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('devtrack_sidebar_collapsed', collapsed ? '1' : '0');
+      collapseBtn.querySelector('svg')?.setAttribute('transform', collapsed ? 'rotate(180)' : '');
+    });
+  }
+
   // Mobile sidebar
   document.getElementById('btn-sidebar-toggle')?.addEventListener('click', toggleMobileSidebar);
   document.getElementById('sidebar-overlay')?.addEventListener('click', closeMobileSidebar);
@@ -330,10 +408,20 @@ function setupGlobalEvents() {
 
   document.getElementById('btn-mark-all-read')?.addEventListener('click', markAllNotificationsRead);
 
-  // Notes & Decisions
+  // Export
+  document.getElementById('btn-export')?.addEventListener('click', () => exportTasks());
+
+  // Notes & Decisions — compact bar
+  document.getElementById('left-off-text')?.addEventListener('input', () => {
+    const btn = document.getElementById('btn-save-wilo');
+    if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = ''; }
+  });
   document.getElementById('btn-save-wilo')?.addEventListener('click', () => {
-    const text = document.getElementById('left-off-text').innerText;
+    const el = document.getElementById('left-off-text');
+    const text = el?.innerText?.trim() || '';
     saveLeftOff(text);
+    const btn = document.getElementById('btn-save-wilo');
+    if (btn) { btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; }
   });
   document.getElementById('decision-log-box')?.addEventListener('click', openDecisionLogModal);
 
@@ -460,7 +548,8 @@ function renderFocusStrip(project) {
 function renderProjectNotes(project) {
   const el = document.getElementById('left-off-text');
   if (el) {
-    el.innerText = project.where_i_left_off || 'Click to add a note...';
+    el.innerText = project.where_i_left_off || '';
+    el.setAttribute('data-placeholder', 'Note where you left off…');
   }
 }
 
