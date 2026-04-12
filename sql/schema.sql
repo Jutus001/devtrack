@@ -402,9 +402,9 @@ $$;
 
 -- Auto-create profile row on new user signup
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  INSERT INTO profiles (id, display_name)
+  INSERT INTO public.profiles (id, display_name)
   VALUES (NEW.id, split_part(NEW.email, '@', 1))
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
