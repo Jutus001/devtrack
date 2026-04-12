@@ -43,11 +43,30 @@ export const PRIORITIES = [
   { id: 'low',      label: 'Low',      color: 'var(--text-dim)' },
 ];
 
+// ── Status normalization (handles legacy/imported data) ───────
+const STATUS_NORM = {
+  'Todo': 'todo', 'todo': 'todo',
+  'Backlog': 'backlog', 'backlog': 'backlog',
+  'In Progress': 'in_progress', 'in_progress': 'in_progress',
+  'In Review': 'in_review', 'in_review': 'in_review', 'Review': 'in_review',
+  'Done': 'done', 'done': 'done',
+  'Blocked': 'blocked', 'blocked': 'blocked',
+};
+export function normalizeTasks(tasks) {
+  const knownIds = new Set(STATUSES.map(s => s.id));
+  tasks.forEach(t => {
+    const mapped = STATUS_NORM[t.status];
+    if (mapped) t.status = mapped;
+    else if (!knownIds.has(t.status)) t.status = 'backlog';
+  });
+  return tasks;
+}
+
 // ── Load tasks for a project ─────────────────────────────────
 export async function loadTasks(projectId, filters = {}) {
   try {
     const tasks = await getTasks(projectId, filters);
-    return tasks;
+    return normalizeTasks(tasks);
   } catch (err) {
     showToast('Failed to load tasks', 'error');
     return [];

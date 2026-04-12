@@ -129,19 +129,14 @@ export async function deleteProject(id) {
 }
 
 export async function joinProjectByCode(code) {
-  const user = await getUser();
-  const { data: project, error } = await supabase
-    .from('projects')
-    .select('id, name, user_id')
-    .eq('join_code', code.toUpperCase())
-    .single();
-  if (error || !project) throw new Error('Invalid join code');
-  if (project.user_id === user.id) throw new Error('You own this project');
-  await supabase.from('project_members').upsert(
-    { project_id: project.id, user_id: user.id, role: 'member' },
-    { onConflict: 'project_id,user_id' }
-  );
-  return project;
+  // Uses a SECURITY DEFINER RPC to bypass RLS — the joiner isn't a member yet
+  // so a direct table query would be blocked.
+  const { data, error } = await supabase.rpc('join_project_by_code', {
+    p_code: code.toUpperCase()
+  });
+  if (error) throw new Error(error.message || 'Invalid join code');
+  if (!data) throw new Error('Invalid join code');
+  return data;
 }
 
 export async function getProjectMembers(projectId) {

@@ -36,6 +36,13 @@ let _hasBooted = false;
 async function init() {
   showLoading(true);
 
+  // 0. Capture ?join=CODE before anything clears it (handles unauthenticated visitors)
+  const _initJoinCode = new URLSearchParams(window.location.search).get('join');
+  if (_initJoinCode) {
+    sessionStorage.setItem('devtrack_pending_join', _initJoinCode.toUpperCase());
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
   // 1. Theme
   initTheme(localStorage.getItem('devtrack_theme'));
 
@@ -110,10 +117,10 @@ async function bootApp(user) {
     } else {
       showDashboard();
     }
-    // Handle ?join=CODE invite links
-    const joinCode = new URLSearchParams(window.location.search).get('join');
+    // Handle ?join=CODE invite links (code saved to sessionStorage at page load)
+    const joinCode = sessionStorage.getItem('devtrack_pending_join');
     if (joinCode) {
-      window.history.replaceState({}, '', window.location.pathname);
+      sessionStorage.removeItem('devtrack_pending_join');
       setTimeout(async () => {
         const { openJoinProjectModal } = await import('./projects.js');
         openJoinProjectModal(joinCode);
@@ -163,7 +170,7 @@ function ensureProjectViewStructure() {
         <h3>Welcome to DevTrack</h3>
         <p>Select a project from the sidebar or create a new one to get started with your tasks.</p>
       </div>
-      <div id="project-view" style="display:none;height:100%;flex-direction:column;overflow-y:auto">
+      <div id="project-view" style="display:none;height:100%;flex-direction:column;overflow:hidden">
         <div id="project-header" style="padding:var(--s4);border-bottom:1px solid var(--border);background:var(--surface)">
           <div style="display:flex;gap:16px;margin-top:8px">
             <div id="left-off-sticky" style="flex:1;background:var(--amber-dim);border:1px solid var(--amber);padding:12px;border-radius:var(--r2);position:relative">

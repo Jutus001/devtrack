@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --input-type=module)",
+      "Bash(node -e \"const fs=require\\('fs'\\); ['js/kanban.js','js/projects.js','js/app.js','js/tasks.js','js/views.js','js/collaboration.js'].forEach\\(f => { try { new Function\\(fs.readFileSync\\(f,'utf8'\\)\\); console.log\\('OK:', f\\); } catch\\(e\\) { console.log\\('ERR:', f, e.message\\); } }\\);\")",
+      "Bash(node --experimental-vm-modules -e ':*)",
+      "Bash(node -e ':*)"
+    ]
+  }
+}

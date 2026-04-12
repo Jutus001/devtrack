@@ -118,7 +118,7 @@ function openProjectContextMenu(anchor, project) {
     const action = item.dataset.action;
     if (action === 'members') openMembersModal(project);
     if (action === 'edit')    openEditProjectModal(project);
-    if (action === 'delete')  import('./projects.js').then(m => m.deleteProjectWithConfirm(project));
+    if (action === 'delete')  deleteProjectWithConfirm(project);
   });
 
   // Close on outside click

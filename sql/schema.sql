@@ -415,3 +415,39 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- ── Invite link join (SECURITY DEFINER bypasses RLS) ─────────
+-- Needed because a new joiner is not yet a project member,
+-- so a plain SELECT on projects would be blocked by RLS.
+CREATE OR REPLACE FUNCTION join_project_by_code(p_code text)
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_id    uuid;
+  v_name  text;
+  v_owner uuid;
+  v_uid   uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT id, name, user_id
+    INTO v_id, v_name, v_owner
+    FROM projects
+   WHERE join_code = upper(p_code);
+
+  IF v_id IS NULL THEN
+    RAISE EXCEPTION 'Invalid join code';
+  END IF;
+
+  IF v_owner = v_uid THEN
+    RAISE EXCEPTION 'You already own this project';
+  END IF;
+
+  INSERT INTO project_members (project_id, user_id, role)
+  VALUES (v_id, v_uid, 'member')
+  ON CONFLICT (project_id, user_id) DO NOTHING;
+
+  RETURN json_build_object('id', v_id, 'name', v_name, 'user_id', v_owner);
+END;
+$$;
