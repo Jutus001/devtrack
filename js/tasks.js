@@ -165,7 +165,7 @@ export async function openCreateTaskModal(projectId, defaultStatus = 'todo', def
     }
   });
 
-  // Show/hide bug fields
+  // Show/hide bug fields + sprint/milestone create buttons
   setTimeout(() => {
     const typeSelect = document.getElementById('tf-type');
     typeSelect?.addEventListener('change', () => {
@@ -177,6 +177,15 @@ export async function openCreateTaskModal(projectId, defaultStatus = 'todo', def
       const bugSection = document.getElementById('tf-bug-section');
       if (bugSection) bugSection.style.display = 'block';
     }
+    // Sprint/milestone quick-create
+    document.getElementById('tf-ms-create')?.addEventListener('click', async () => {
+      const { openMilestonesModal } = await import('./projects.js');
+      await openMilestonesModal(projectId);
+    });
+    document.getElementById('tf-sp-create')?.addEventListener('click', async () => {
+      const { openSprintsModal } = await import('./projects.js');
+      await openSprintsModal(projectId);
+    });
   }, 50);
 }
 
@@ -270,6 +279,15 @@ export async function openEditTaskModal(task) {
         if (bugSection) bugSection.style.display = 'block';
       }
     }
+    // Sprint/milestone quick-create
+    document.getElementById('tf-ms-create')?.addEventListener('click', async () => {
+      const { openMilestonesModal } = await import('./projects.js');
+      await openMilestonesModal(task.project_id);
+    });
+    document.getElementById('tf-sp-create')?.addEventListener('click', async () => {
+      const { openSprintsModal } = await import('./projects.js');
+      await openSprintsModal(task.project_id);
+    });
   }, 50);
 }
 
@@ -352,7 +370,10 @@ function buildTaskForm({ milestones = [], sprints = [], memberProfiles = [], def
       <div style="display:flex;flex-direction:column;gap:12px;padding-left:16px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="form-group">
-            <label class="form-label">Milestone</label>
+            <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
+              Milestone
+              <button type="button" id="tf-ms-create" style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--accent);background:none;border:none;cursor:pointer;padding:0">+ Create</button>
+            </label>
             <select class="form-input form-select" id="tf-milestone">
               <option value="">None</option>
               ${milestones.map(m =>
@@ -361,7 +382,10 @@ function buildTaskForm({ milestones = [], sprints = [], memberProfiles = [], def
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Sprint</label>
+            <label class="form-label" style="display:flex;align-items:center;justify-content:space-between">
+              Sprint
+              <button type="button" id="tf-sp-create" style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--accent);background:none;border:none;cursor:pointer;padding:0">+ Create</button>
+            </label>
             <select class="form-input form-select" id="tf-sprint">
               <option value="">None</option>
               ${sprints.map(s =>

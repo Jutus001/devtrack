@@ -80,6 +80,8 @@ function openProjectContextMenu(anchor, project) {
 
   const items = [
     { label: 'Members & Invite', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, action: 'members' },
+    { label: 'Milestones', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 3a3 3 0 0 1 0 6H6a3 3 0 0 1 0-6"/><path d="M6 9a3 3 0 0 0 0 6"/><path d="M6 15a3 3 0 0 0 0 6h12"/></svg>`, action: 'milestones' },
+    { label: 'Sprints', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>`, action: 'sprints' },
     ...(isOwner ? [
       { label: 'Edit Project', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`, action: 'edit' },
       { label: 'Delete Project', icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`, action: 'delete', danger: true },
@@ -110,26 +112,26 @@ function openProjectContextMenu(anchor, project) {
     item.addEventListener('mouseleave', () => item.style.background = '');
   });
 
+  // Close on outside click (use pointerdown so it doesn't intercept click events on other elements)
+  const outsideHandler = e => { if (!menu.contains(e.target)) closeMenu(); };
+  const closeMenu = () => {
+    menu.remove();
+    document.removeEventListener('pointerdown', outsideHandler);
+  };
+  setTimeout(() => document.addEventListener('pointerdown', outsideHandler), 0);
+
   // Action handlers
   menu.addEventListener('click', e => {
     const item = e.target.closest('[data-action]');
     if (!item) return;
     closeMenu();
     const action = item.dataset.action;
-    if (action === 'members') openMembersModal(project);
-    if (action === 'edit')    openEditProjectModal(project);
-    if (action === 'delete')  deleteProjectWithConfirm(project);
+    if (action === 'members')    openMembersModal(project);
+    if (action === 'milestones') openMilestonesModal(project.id);
+    if (action === 'sprints')    openSprintsModal(project.id);
+    if (action === 'edit')       openEditProjectModal(project);
+    if (action === 'delete')     deleteProjectWithConfirm(project);
   });
-
-  // Close on outside click
-  const closeMenu = () => {
-    menu.remove();
-    document.removeEventListener('click', outsideHandler, true);
-  };
-  const outsideHandler = e => {
-    if (!menu.contains(e.target)) closeMenu();
-  };
-  setTimeout(() => document.addEventListener('click', outsideHandler, true), 0);
 }
 
 // ── Create project modal ─────────────────────────────────────
