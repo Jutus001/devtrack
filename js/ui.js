@@ -39,7 +39,12 @@ function createToastContainer() {
 
 // ── Modals ───────────────────────────────────────────────────
 // options: { id, title, body, size, primaryLabel, onPrimary, secondaryLabel, onSecondary }
-export function openModal(options) {
+export async function openModal(options) {
+  if (window.innerWidth <= 1024) {
+    const { closeAllPanels } = await import('./app.js');
+    closeAllPanels();
+  }
+  
   // Remove existing if any
   const existing = document.getElementById(options.id);
   if (existing) existing.remove();

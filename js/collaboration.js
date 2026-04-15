@@ -12,6 +12,11 @@ import { escHtml } from './projects.js';
 
 // ── Open Task Detail Panel ───────────────────────────────────
 export async function openTaskDetail(task) {
+  if (window.innerWidth <= 1024) {
+    const { closeAllPanels } = await import('./app.js');
+    closeAllPanels();
+  }
+  
   const panel = document.getElementById('detail-panel');
   if (!panel) return;
 

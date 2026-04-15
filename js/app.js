@@ -29,6 +29,57 @@ export const AppState = {
   }
 };
 
+// ============================================================================
+// MOBILE RESPONSIVE STATE
+// ============================================================================
+export const ResponsiveState = {
+  isSidebarVisible: false, // left panel (projects)
+  isDetailVisible: false,  // right panel (task detail)
+  activeNavBtn: 'board'    // 'projects' | 'board' | 'detail'
+};
+
+export const closeAllPanels = () => {
+  ResponsiveState.isSidebarVisible = false;
+  ResponsiveState.isDetailVisible = false;
+  ResponsiveState.activeNavBtn = 'board';
+  
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('detail-panel')?.classList.remove('open');
+  document.getElementById('sidebar-overlay')?.classList.remove('active');
+  
+  setMobileNavActive('board');
+};
+
+export const toggleLeftPanel = () => {
+  if (ResponsiveState.isSidebarVisible) {
+    closeAllPanels();
+  } else {
+    closeAllPanels();
+    ResponsiveState.isSidebarVisible = true;
+    ResponsiveState.activeNavBtn = 'projects';
+    document.getElementById('sidebar')?.classList.add('open');
+    document.getElementById('sidebar-overlay')?.classList.add('active');
+    setMobileNavActive('projects');
+  }
+};
+
+export const toggleRightPanel = () => {
+  if (ResponsiveState.isDetailVisible) {
+    closeAllPanels();
+  } else {
+    closeAllPanels();
+    ResponsiveState.isDetailVisible = true;
+    ResponsiveState.activeNavBtn = 'detail';
+    document.getElementById('detail-panel')?.classList.add('open');
+    document.getElementById('sidebar-overlay')?.classList.add('active');
+    setMobileNavActive('detail');
+  }
+};
+
+const handleResponsiveResize = () => {
+  if (window.innerWidth > 1024) closeAllPanels();
+};
+
 // ── Initialization ───────────────────────────────────────────
 let _isBooting = false;
 let _hasBooted = false;
@@ -90,6 +141,9 @@ async function init() {
       forceHideLoader();
     }
   });
+
+  window.addEventListener('resize', handleResponsiveResize);
+  window.addEventListener('orientationchange', closeAllPanels);
 
   // 5. Global UI events
   setupGlobalEvents();
@@ -365,23 +419,13 @@ function setupGlobalEvents() {
   }
 
   // Mobile sidebar
-  document.getElementById('btn-sidebar-toggle')?.addEventListener('click', toggleMobileSidebar);
-  document.getElementById('sidebar-overlay')?.addEventListener('click', closeMobileSidebar);
+  document.getElementById('btn-sidebar-toggle')?.addEventListener('click', toggleLeftPanel);
+  document.getElementById('sidebar-overlay')?.addEventListener('click', closeAllPanels);
 
   // Bottom nav
-  document.getElementById('mobile-nav-projects')?.addEventListener('click', toggleMobileSidebar);
-  document.getElementById('mobile-nav-board')?.addEventListener('click', () => {
-    closeMobileSidebar();
-    document.getElementById('detail-panel')?.classList.remove('open');
-  });
-  document.getElementById('mobile-nav-detail')?.addEventListener('click', () => {
-    const panel = document.getElementById('detail-panel');
-    if (panel?.classList.contains('open')) {
-      setMobileNavActive('detail');
-    } else {
-      // Nothing open — do nothing or show a hint
-    }
-  });
+  document.getElementById('mobile-nav-projects')?.addEventListener('click', toggleLeftPanel);
+  document.getElementById('mobile-nav-board')?.addEventListener('click', closeAllPanels);
+  document.getElementById('mobile-nav-detail')?.addEventListener('click', toggleRightPanel);
 
   // Topbar
   document.getElementById('topbar-avatar')?.addEventListener('click', e => {

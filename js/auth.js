@@ -7,6 +7,7 @@ import { showToast } from './ui.js';
 // ── Theme ────────────────────────────────────────────────────
 export function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.toggle('dark', theme === 'dark');
   const btn = document.getElementById('btn-theme-toggle');
   if (btn) {
     btn.innerHTML = theme === 'dark' ? iconSun() : iconMoon();
