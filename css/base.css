@@ -4,28 +4,28 @@
 
 /* ── Custom Properties ── */
 :root {
-  /* Colours — dark theme (default) */
-  --bg:         #0e0e0f;
-  --surface:    #141415;
-  --elevated:   #1a1a1c;
-  --overlay:    #202024;
-  --border:     #2a2a2d;
-  --border-mid: #353538;
+  /* Colours — dark theme (default) — slightly warmer for eye comfort */
+  --bg:         #0f0f11;
+  --surface:    #16161a;
+  --elevated:   #1c1c22;
+  --overlay:    #23232b;
+  --border:     #2c2c34;
+  --border-mid: #3a3a45;
 
-  --text:       #e8e8ea;
-  --text-muted: #888890;
-  --text-dim:   #55555c;
+  --text:       #eaeaec;
+  --text-muted: #8a8a96;
+  --text-dim:   #56566a;
 
   --accent:     #4f8eff;
-  --accent-dim: rgba(79,142,255,.15);
+  --accent-dim: rgba(79,142,255,.14);
   --green:      #3ecf8e;
-  --green-dim:  rgba(62,207,142,.15);
+  --green-dim:  rgba(62,207,142,.14);
   --red:        #f05151;
-  --red-dim:    rgba(240,81,81,.15);
+  --red-dim:    rgba(240,81,81,.14);
   --amber:      #f0a030;
-  --amber-dim:  rgba(240,160,48,.15);
+  --amber-dim:  rgba(240,160,48,.14);
   --purple:     #a855f7;
-  --purple-dim: rgba(168,85,247,.15);
+  --purple-dim: rgba(168,85,247,.14);
 
   /* Typography */
   --font-sans: 'IBM Plex Sans', system-ui, sans-serif;

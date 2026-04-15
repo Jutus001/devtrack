@@ -10,32 +10,67 @@ import { showToast } from './ui.js';
 // ══════════════════════════════════════════════════════════════
 // TABLE VIEW
 // ══════════════════════════════════════════════════════════════
+const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+const STATUS_ORDER   = { todo: 0, in_progress: 1, in_review: 2, done: 3, blocked: 4, backlog: 5 };
+const TYPE_ORDER     = { feature: 0, bug: 1, chore: 2, research: 3, design: 4 };
+
+function sortTaskList(tasks, col, dir) {
+  return [...tasks].sort((a, b) => {
+    let av, bv;
+    if (col === 'priority') {
+      av = PRIORITY_ORDER[a.priority] ?? 99;
+      bv = PRIORITY_ORDER[b.priority] ?? 99;
+    } else if (col === 'status') {
+      av = STATUS_ORDER[a.status] ?? 99;
+      bv = STATUS_ORDER[b.status] ?? 99;
+    } else if (col === 'task_type') {
+      av = TYPE_ORDER[a.task_type] ?? 99;
+      bv = TYPE_ORDER[b.task_type] ?? 99;
+    } else if (col === 'due_date') {
+      av = a.due_date || 'zzz';
+      bv = b.due_date || 'zzz';
+    } else {
+      av = (a[col] || '').toString().toLowerCase();
+      bv = (b[col] || '').toString().toLowerCase();
+    }
+    if (av < bv) return dir === 'asc' ? -1 : 1;
+    if (av > bv) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+}
+
+const SORT_ICON_NEUTRAL = `<svg class="sort-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>`;
+const SORT_ICON_ASC     = `<svg class="sort-icon sort-active" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 14l5 5 5-5"/><path d="M7 10h10" opacity=".3"/></svg>`;
+const SORT_ICON_DESC    = `<svg class="sort-icon sort-active" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 10l5-5 5 5"/><path d="M7 14h10" opacity=".3"/></svg>`;
+
 export async function renderTableView(projectId, filters = {}, appState = {}) {
   const container = document.getElementById('kanban-board');
   if (!container) return;
   container.style.cssText = 'display:block;flex:1;min-height:0;overflow:hidden;padding:0';
-  container.innerHTML = `<div style="height:100%;overflow:auto;background:var(--surface)">
-    <table class="task-table" id="task-table-el">
-      <thead>
-        <tr>
-          <th style="width:36px"></th>
-          <th>Title</th>
-          <th class="table-col-hide-tablet">Type</th>
-          <th>Status</th>
-          <th class="table-col-hide-tablet">Priority</th>
-          <th class="table-col-hide-mobile">Assignees</th>
-          <th class="table-col-hide-mobile">Due</th>
-          <th class="table-col-hide-tablet">Tags</th>
-          <th style="width:80px"></th>
-        </tr>
-      </thead>
-      <tbody id="task-table-body">
-        <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-dim)">
-          <div class="animate-spin" style="display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%"></div>
-        </td></tr>
-      </tbody>
-    </table>
-  </div>`;
+
+  const SPINNER = `<div class="animate-spin" style="display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%"></div>`;
+
+  container.innerHTML = `
+    <div class="table-view-container" style="height:100%;overflow:auto">
+      <table class="task-table" id="task-table-el">
+        <thead>
+          <tr>
+            <th class="th-flag" style="width:32px"></th>
+            <th class="th-sortable" data-sort="title">Title ${SORT_ICON_NEUTRAL}</th>
+            <th class="th-sortable table-col-hide-tablet" data-sort="task_type">Type ${SORT_ICON_NEUTRAL}</th>
+            <th class="th-sortable" data-sort="status">Status ${SORT_ICON_NEUTRAL}</th>
+            <th class="th-sortable table-col-hide-tablet" data-sort="priority">Priority ${SORT_ICON_NEUTRAL}</th>
+            <th class="table-col-hide-mobile">Assignees</th>
+            <th class="th-sortable table-col-hide-mobile" data-sort="due_date">Due ${SORT_ICON_NEUTRAL}</th>
+            <th class="table-col-hide-tablet">Tags</th>
+            <th class="th-actions" style="width:48px"></th>
+          </tr>
+        </thead>
+        <tbody id="task-table-body">
+          <tr><td colspan="9" style="text-align:center;padding:48px;color:var(--text-dim)">${SPINNER}</td></tr>
+        </tbody>
+      </table>
+    </div>`;
 
   try {
     const [tasks, members] = await Promise.all([
@@ -49,111 +84,128 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
       profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
     }
 
-    const tbody = document.getElementById('task-table-body');
-    if (!tbody) return;
+    let sortCol = 'title';
+    let sortDir = 'asc';
 
-    if (tasks.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9">
-        <div class="empty-state"><p>No tasks found</p></div>
-      </td></tr>`;
-      return;
+    function updateSortHeaders() {
+      document.querySelectorAll('#task-table-el .th-sortable').forEach(th => {
+        th.classList.remove('th-sort-asc', 'th-sort-desc');
+        const iconEl = th.querySelector('.sort-icon');
+        if (!iconEl) return;
+        const isActive = th.dataset.sort === sortCol;
+        iconEl.classList.toggle('sort-active', isActive);
+        if (isActive && sortDir === 'asc') {
+          th.classList.add('th-sort-asc');
+          iconEl.innerHTML = '<path d="M7 14l5 5 5-5"/><path d="M7 10h10" opacity=".3"/>';
+        } else if (isActive && sortDir === 'desc') {
+          th.classList.add('th-sort-desc');
+          iconEl.innerHTML = '<path d="M7 10l5-5 5 5"/><path d="M7 14h10" opacity=".3"/>';
+        } else {
+          iconEl.innerHTML = '<path d="M7 15l5 5 5-5M7 9l5-5 5 5"/>';
+        }
+      });
     }
 
-    tbody.innerHTML = tasks.map(task => {
-      const status = STATUSES.find(s => s.id === task.status) || STATUSES[0];
-      const priority = PRIORITIES.find(p => p.id === task.priority) || PRIORITIES[2];
-      const typeConf = TASK_TYPES[task.task_type] || TASK_TYPES.feature;
-      const dueCls = getDueDateClass(task.due_date);
-      const assigneeAvatars = (task.assignees || []).slice(0, 3).map(uid => {
-        const p = profileMap[uid];
-        return `<div class="avatar avatar-xs" style="background:${p?.avatar_color||'#4f8eff'};color:#fff;margin-left:-4px" title="${escHtml(p?.display_name||'')}">
-          ${initials(p?.display_name || '?')}
-        </div>`;
+    function renderRows(sorted) {
+      const tbody = document.getElementById('task-table-body');
+      if (!tbody) return;
+
+      if (sorted.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><p>No tasks found</p></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = sorted.map(task => {
+        const status   = STATUSES.find(s => s.id === task.status) || STATUSES[0];
+        const priority = PRIORITIES.find(p => p.id === task.priority) || PRIORITIES[2];
+        const typeConf = TASK_TYPES[task.task_type] || TASK_TYPES.feature;
+        const dueCls   = getDueDateClass(task.due_date);
+        const assigneeAvatars = (task.assignees || []).slice(0, 3).map(uid => {
+          const p = profileMap[uid];
+          return `<div class="avatar avatar-xs" style="background:${p?.avatar_color||'#4f8eff'};color:#fff;margin-left:-4px" title="${escHtml(p?.display_name||'')}">${initials(p?.display_name || '?')}</div>`;
+        }).join('');
+
+        const dueBadge = task.due_date
+          ? `<span class="badge ${dueCls === 'due-overdue' ? 'badge-red' : dueCls === 'due-today' ? 'badge-amber' : dueCls === 'due-week' ? 'badge-accent' : 'badge-default'}" style="font-size:10px">${formatShortDate(task.due_date)}</span>`
+          : `<span style="color:var(--text-dim);font-size:11px">—</span>`;
+
+        const tagChips = (task.tags || []).slice(0, 3).map(t =>
+          `<span class="tag-pill">${escHtml(t)}</span>`
+        ).join('');
+
+        return `
+          <tr data-task-id="${task.id}"${task.is_blocker ? ' class="blocker-row"' : ''}>
+            <td class="td-flag">
+              ${task.is_blocker ? `<span class="blocker-icon" title="Blocker">!</span>` : ''}
+            </td>
+            <td class="td-title">
+              <span class="task-title-text">${escHtml(task.title)}</span>
+              ${(task.tags||[]).length > 0 ? `<div class="td-tags-inline">${tagChips}</div>` : ''}
+            </td>
+            <td class="table-col-hide-tablet">
+              <span class="badge" style="background:${typeConf.color}1a;color:${typeConf.color};gap:5px">${typeConf.svg} ${typeConf.label}</span>
+            </td>
+            <td>
+              <span class="badge status-badge" data-status="${task.status}">${status.label}</span>
+            </td>
+            <td class="table-col-hide-tablet">
+              <span class="priority-text" data-priority="${task.priority || 'medium'}">${priority.label}</span>
+            </td>
+            <td class="table-col-hide-mobile">
+              <div style="display:flex;align-items:center;flex-direction:row-reverse;justify-content:flex-end;margin-left:4px">
+                ${assigneeAvatars}
+              </div>
+            </td>
+            <td class="table-col-hide-mobile">${dueBadge}</td>
+            <td class="table-col-hide-tablet">
+              <div style="display:flex;gap:4px;flex-wrap:wrap">${tagChips}</div>
+            </td>
+            <td class="td-actions">
+              <div class="row-actions">
+                <button class="btn-row-edit btn-edit-task" data-task-id="${task.id}" title="Edit task">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>`;
       }).join('');
 
-      return `
-        <tr data-task-id="${task.id}" class="${task.is_blocker ? 'blocker-row' : ''}">
-          <td>
-            ${task.is_blocker ? `<span style="color:var(--red);font-size:12px" title="Blocker">⚠</span>` : ''}
-          </td>
-          <td>
-            <div style="display:flex;align-items:center;gap:8px;min-width:0">
-              <span style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(task.title)}</span>
-            </div>
-            ${(task.tags||[]).length > 0 ? `
-              <div style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
-                ${(task.tags||[]).slice(0,3).map(t => `<span class="tag-pill" style="font-size:10px;padding:1px 5px">${escHtml(t)}</span>`).join('')}
-              </div>` : ''}
-          </td>
-          <td class="table-col-hide-tablet">
-            <span class="badge" style="background:${typeConf.color}22;color:${typeConf.color}">${typeConf.svg} ${typeConf.label}</span>
-          </td>
-          <td>
-            <span class="badge status-badge" data-status="${task.status}">${status.label}</span>
-          </td>
-          <td class="table-col-hide-tablet">
-            <span style="color:${priority.color};font-size:12px;font-family:var(--font-mono)">${priority.label}</span>
-          </td>
-          <td class="table-col-hide-mobile">
-            <div style="display:flex;align-items:center;flex-direction:row-reverse;justify-content:flex-end;margin-left:4px">
-              ${assigneeAvatars}
-            </div>
-          </td>
-          <td class="table-col-hide-mobile">
-            ${task.due_date ? `
-              <span class="badge ${dueCls === 'due-overdue' ? 'badge-red' : dueCls === 'due-today' ? 'badge-amber' : dueCls === 'due-week' ? 'badge-accent' : 'badge-default'}" style="font-size:10px">
-                ${formatShortDate(task.due_date)}
-              </span>` : `<span style="color:var(--text-dim);font-size:11px">—</span>`}
-          </td>
-          <td class="table-col-hide-tablet">
-            <div style="display:flex;gap:4px;flex-wrap:wrap">
-              ${(task.tags||[]).slice(0,2).map(t => `<span class="tag-pill" style="font-size:10px">${escHtml(t)}</span>`).join('')}
-            </div>
-          </td>
-          <td>
-            <div style="display:flex;gap:4px;opacity:0;transition:opacity var(--t-fast)" class="row-actions">
-              <button class="btn btn-ghost btn-sm btn-edit-task" data-task-id="${task.id}" title="Edit">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    // Row hover → show actions
-    tbody.querySelectorAll('tr').forEach(row => {
-      row.addEventListener('mouseenter', () => row.querySelector('.row-actions')?.style.setProperty('opacity', '1'));
-      row.addEventListener('mouseleave', () => row.querySelector('.row-actions')?.style.setProperty('opacity', '0'));
-    });
-
-    // Row click → open detail panel
-    tbody.querySelectorAll('tr[data-task-id]').forEach(row => {
-      row.addEventListener('click', e => {
-        if (e.target.closest('button')) return;
-        const id = row.dataset.taskId;
-        const task = tasks.find(t => t.id === id);
-        if (task) import('./collaboration.js').then(m => m.openTaskDetail(task));
+      // Row click → open detail panel
+      tbody.querySelectorAll('tr[data-task-id]').forEach(row => {
+        row.addEventListener('click', e => {
+          if (e.target.closest('button')) return;
+          const task = tasks.find(t => t.id === row.dataset.taskId);
+          if (task) import('./collaboration.js').then(m => m.openTaskDetail(task));
+        });
       });
-    });
 
-    // Edit buttons
-    tbody.querySelectorAll('.btn-edit-task').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const id = btn.dataset.taskId;
-        const task = tasks.find(t => t.id === id);
-        if (task) import('./tasks.js').then(m => m.openEditTaskModal(task));
+      // Edit buttons
+      tbody.querySelectorAll('.btn-edit-task').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const task = tasks.find(t => t.id === btn.dataset.taskId);
+          if (task) import('./tasks.js').then(m => m.openEditTaskModal(task));
+        });
       });
-    });
+    }
 
-    // Column sort
-    document.querySelectorAll('.task-table th[data-sort]').forEach(th => {
-      th.style.cursor = 'pointer';
+    // Bind sort header clicks
+    document.querySelectorAll('#task-table-el .th-sortable').forEach(th => {
       th.addEventListener('click', () => {
-        // Simple client-side sort
+        if (sortCol === th.dataset.sort) {
+          sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortCol = th.dataset.sort;
+          sortDir = 'asc';
+        }
+        updateSortHeaders();
+        renderRows(sortTaskList(tasks, sortCol, sortDir));
       });
     });
+
+    // Initial render
+    updateSortHeaders();
+    renderRows(sortTaskList(tasks, sortCol, sortDir));
 
   } catch (err) {
     showToast('Failed to load table view', 'error');

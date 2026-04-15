@@ -477,99 +477,8 @@
 }
 
 /* ============================================================================
-   FIXPRO24 RESPONSIVE RULES — APPENDED
+   ADDITIONAL RESPONSIVE RULES
    ============================================================================ */
-
-/* ============================================================================
-   SAFE AREA INSETS — iPhone notch / Dynamic Island
-   ============================================================================ */
-@supports (padding: max(0px)) {
-  #topbar {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-  }
-  .mobile-nav {
-    padding-left: max(8px, env(safe-area-inset-left));
-    padding-right: max(8px, env(safe-area-inset-right));
-  }
-}
-
-/* ============================================================================
-   MOBILE OVERLAY
-   ============================================================================ */
-.mobile-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 60px;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 80;
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
-}
-.mobile-overlay.active { display: block; }
-
-/* ============================================================================
-   MOBILE NAV BAR
-   ============================================================================ */
-.mobile-nav {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  border-top: 1px solid #e2e8f0;
-  padding: 4px;
-  padding-bottom: calc(4px + env(safe-area-inset-bottom));
-  z-index: 100;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
-}
-.dark .mobile-nav {
-  background: #1f2937;
-  border-top: 1px solid #4b5563;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.4);
-}
-
-/* 3-column (default) */
-.mobile-nav-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-}
-
-.mobile-nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 8px;
-  border: none;
-  background: transparent;
-  color: #718096;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 10px;
-  min-height: 52px;
-  gap: 3px;
-  -webkit-tap-highlight-color: transparent;
-  white-space: nowrap;
-}
-.mobile-nav-btn:focus { outline: none; }
-.mobile-nav-btn:active { transform: scale(0.93); }
-.dark .mobile-nav-btn { color: #9ca3af; }
-.mobile-nav-btn i, .mobile-nav-btn svg { font-size: 22px; line-height: 1; }
-
-/* Active state — FixPro24 amber brand */
-.mobile-nav-btn.active { background: #fef3c7; color: #92400e; }
-.mobile-nav-btn.active i, .mobile-nav-btn.active svg { color: #f59e0b; }
-.dark .mobile-nav-btn.active { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-.dark .mobile-nav-btn.active i, .dark .mobile-nav-btn.active svg { color: #fbbf24; }
 
 /* Nav hides when modal is open */
 @media (max-width: 1024px) {
@@ -578,20 +487,6 @@
     transition: transform 0.25s ease;
     pointer-events: none;
   }
-}
-
-/* ============================================================================
-   LARGE DESKTOP — 1200px to 1400px
-   ============================================================================ */
-@media (max-width: 1400px) {
-  /* #main { grid-template-columns: 240px 1fr; } */
-}
-
-/* ============================================================================
-   STANDARD DESKTOP — 1025px to 1200px
-   ============================================================================ */
-@media (max-width: 1200px) {
-  /* #main { grid-template-columns: 200px 1fr; } */
 }
 
 /* ============================================================================
