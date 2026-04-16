@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="css/components.css">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234f8eff'/></svg>">
+  <!-- Apply saved theme before CSS paints to prevent flash -->
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('devtrack_theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));</script>
 
   <style>
     body {
@@ -47,7 +49,7 @@
     }
   </style>
 </head>
-<body data-theme="dark">
+<body>
 
   <div class="login-wrap">
     <div class="login-logo">

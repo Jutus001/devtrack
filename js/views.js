@@ -46,6 +46,7 @@ const SORT_ICON_DESC    = `<svg class="sort-icon sort-active" width="10" height=
 export async function renderTableView(projectId, filters = {}, appState = {}) {
   const container = document.getElementById('kanban-board');
   if (!container) return;
+  document.getElementById('kanban-indicator')?.style.setProperty('display', 'none', 'important');
   container.style.cssText = 'display:block;flex:1;min-height:0;overflow:hidden;padding:0';
 
   const SPINNER = `<div class="animate-spin" style="display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%"></div>`;
@@ -223,6 +224,7 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
 export async function renderUpcomingView(projectId, filters = {}, appState = {}) {
   const container = document.getElementById('kanban-board');
   if (!container) return;
+  document.getElementById('kanban-indicator')?.style.setProperty('display', 'none', 'important');
   container.style.cssText = 'display:block;flex:1;min-height:0;overflow:hidden;padding:0';
   container.innerHTML = `<div style="height:100%;overflow-y:auto" id="upcoming-scroll">
     <div class="empty-state" style="padding:60px">
@@ -312,6 +314,7 @@ function buildUpcomingRow(task) {
 export async function renderRoadmapView(projectId, appState = {}) {
   const container = document.getElementById('kanban-board');
   if (!container) return;
+  document.getElementById('kanban-indicator')?.style.setProperty('display', 'none', 'important');
   container.style.cssText = 'display:block;flex:1;min-height:0;overflow:hidden;padding:0';
   container.innerHTML = `<div id="roadmap-view">
     <div class="empty-state">

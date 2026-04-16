@@ -43,7 +43,7 @@
 
 .mobile-nav-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 4px;
 }
 
@@ -130,7 +130,6 @@
 
   /* Main content clears mobile nav bar */
   #main { padding-bottom: 0; }
-  #kanban-board      { padding-bottom: 72px; }
   #upcoming-scroll   { padding-bottom: 72px; }
   .notif-list        { padding-bottom: 0; }
   .table-view-container { padding-bottom: 72px !important; }
@@ -141,14 +140,33 @@
   #filter-bar   { margin-left: 0 !important; width: 100%; }
   .filter-bar   { flex-wrap: wrap; }
 
-  /* Kanban: tight horizontal scroll */
+  /* Kanban: scroll-snap swipeable columns */
   #kanban-board {
-    padding-top: var(--s3);
-    padding-left: var(--s3);
-    padding-right: var(--s3);
-    gap: var(--s3);
+    padding: var(--s2) var(--s2) 72px;
+    gap: var(--s2);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-left: var(--s2);
   }
-  .kanban-column { flex: none; width: 240px; min-width: 240px; max-width: 240px; }
+  .kanban-column {
+    flex: none;
+    width: calc(100vw - 48px);
+    min-width: calc(100vw - 48px);
+    max-width: 360px;
+    scroll-snap-align: start;
+  }
+
+  /* Column indicator */
+  #kanban-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 5px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    min-height: 34px;
+  }
 
   /* Table: hide some columns on tablet */
   .table-col-hide-tablet { display: none; }
@@ -180,8 +198,8 @@
   .view-tabs::-webkit-scrollbar { display: none; }
   .view-tab { flex-shrink: 0; }
 
-  /* Kanban: wide swipeable columns */
-  .kanban-column { width: 82vw; min-width: 82vw; max-width: 82vw; }
+  /* Kanban: full-width snap columns on small phones */
+  .kanban-column { width: calc(100vw - 32px); min-width: calc(100vw - 32px); max-width: calc(100vw - 32px); }
   #kanban-board { padding: var(--s2); gap: var(--s2); }
 
   /* Table: hide more columns + horizontal scroll */

@@ -439,7 +439,6 @@ function setupGlobalEvents() {
   // Bottom nav
   document.getElementById('mobile-nav-projects')?.addEventListener('click', toggleLeftPanel);
   document.getElementById('mobile-nav-board')?.addEventListener('click', closeAllPanels);
-  document.getElementById('mobile-nav-detail')?.addEventListener('click', toggleRightPanel);
 
   // Topbar
   document.getElementById('topbar-avatar')?.addEventListener('click', e => {

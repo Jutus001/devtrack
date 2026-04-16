@@ -73,6 +73,7 @@ export async function renderKanban(projectId, filters = {}, appState = {}) {
     }
 
     initDragAndDrop(board);
+    initMobileIndicator(board);
   } catch (err) {
     board.innerHTML = `<div class="empty-state" style="width:100%"><p style="color:var(--red)">${err.message}</p></div>`;
     showToast('Failed to load board', 'error');
@@ -419,6 +420,46 @@ function autoScrollColumn(x, y) {
       col.scrollTop += speed * (1 - (r.bottom - y) / edgeSize);
     }
   });
+}
+
+// ── Mobile column indicator ───────────────────────────────────
+const STATUS_COLORS = {
+  backlog: '#55555c', todo: '#888890', in_progress: '#4f8eff',
+  in_review: '#a855f7', done: '#3ecf8e', blocked: '#f05151'
+};
+
+function initMobileIndicator(board) {
+  const indicator = document.getElementById('kanban-indicator');
+  if (!indicator) return;
+
+  // Restore display (other views force-hide it)
+  indicator.style.removeProperty('display');
+
+  const cols = Array.from(board.querySelectorAll('.kanban-column'));
+  if (!cols.length) { indicator.innerHTML = ''; return; }
+
+  function update() {
+    // Determine which column is most visible
+    const colWidth = cols[0].offsetWidth + parseInt(getComputedStyle(board).gap || '8');
+    const idx = Math.min(Math.round(board.scrollLeft / colWidth), cols.length - 1);
+    const col = cols[idx];
+    const status = col?.dataset.status || '';
+    const color = STATUS_COLORS[status] || 'var(--accent)';
+    const labelEl = col?.querySelector('.col-title');
+    const countEl = col?.querySelector('.col-count');
+    const label = labelEl?.textContent?.trim() || '';
+    const count = countEl?.textContent?.trim() || '0';
+
+    indicator.innerHTML =
+      `<span class="ki-label" style="color:${color}">${label}</span>` +
+      `<span class="ki-count">${count} task${count !== '1' ? 's' : ''}</span>` +
+      `<span class="ki-dots">${cols.map((_, i) =>
+        `<span class="ki-dot${i === idx ? ' active' : ''}" ${i === idx ? `style="background:${color}"` : ''}></span>`
+      ).join('')}</span>`;
+  }
+
+  update();
+  board.addEventListener('scroll', update, { passive: true });
 }
 
 // ── Refresh board in place ────────────────────────────────────
