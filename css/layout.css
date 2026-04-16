@@ -380,14 +380,16 @@
   flex-direction: column;
   z-index: 500;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   overflow: hidden;
-  transition: opacity var(--t-base), transform var(--t-base);
+  transition: opacity var(--t-base), transform var(--t-base), visibility var(--t-base);
   box-shadow: 0 32px 80px rgba(0, 0, 0, .5);
 }
 
 #detail-panel.open {
   opacity: 1;
+  visibility: visible;
   pointer-events: all;
   transform: translate(-50%, -50%) scale(1);
 }
