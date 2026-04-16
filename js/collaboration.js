@@ -12,11 +12,6 @@ import { escHtml } from './projects.js';
 
 // ── Open Task Detail Panel ───────────────────────────────────
 export async function openTaskDetail(task) {
-  if (window.innerWidth <= 1024) {
-    const { closeAllPanels } = await import('./app.js');
-    closeAllPanels();
-  }
-  
   const panel = document.getElementById('detail-panel');
   if (!panel) return;
 
@@ -113,16 +108,19 @@ export async function openTaskDetail(task) {
   `;
 
   panel.classList.add('open');
-
-  // Update mobile nav active state
+  document.getElementById('detail-backdrop')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
   import('./app.js').then(m => m.setMobileNavActive('detail'));
 
   // Wire close
   const closePanel = () => {
     panel.classList.remove('open');
+    document.getElementById('detail-backdrop')?.classList.remove('open');
+    document.body.style.overflow = '';
     import('./app.js').then(m => m.setMobileNavActive('board'));
   };
   panel.querySelector('.panel-close-btn').onclick = closePanel;
+  document.getElementById('detail-backdrop').onclick = closePanel;
 
   // ESC closes the panel
   const escHandler = (e) => { if (e.key === 'Escape') { closePanel(); document.removeEventListener('keydown', escHandler); } };

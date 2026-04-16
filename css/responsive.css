@@ -44,13 +44,6 @@
     display: flex !important;
   }
 
-  /* Detail panel full-screen on tablet */
-  #detail-panel {
-    width: 100vw;
-    border-left: none;
-    border-top: 1px solid var(--border);
-  }
-
   /* Notifications panel */
   #notifications-panel {
     width: 100vw;
@@ -141,12 +134,6 @@
   }
   .toast { max-width: 100%; }
 
-  /* Detail panel: full screen */
-  #detail-panel {
-    width: 100vw;
-    top: 0;
-  }
-
   /* Table: show fewer columns */
   .table-col-hide-mobile { display: none; }
 
@@ -189,9 +176,6 @@
     min-width: 240px;
   }
 
-  #detail-panel {
-    width: 420px;
-  }
 }
 
 /* ══════════════════════════════════════════
@@ -207,9 +191,6 @@
     min-width: 300px;
   }
 
-  #detail-panel {
-    width: 520px;
-  }
 }
 
 /* ══════════════════════════════════════════
@@ -430,9 +411,6 @@
   .modal-footer { flex-direction: column; }
   .modal-footer .btn { width: 100%; justify-content: center; }
 
-  /* Detail panel: ensure it starts from below topbar */
-  #detail-panel { top: 48px; }
-
   /* Bottom nav labels: still visible */
   .mobile-nav-btn span { font-size: 10px; }
 }
@@ -526,30 +504,6 @@
   /* Scroll area clears nav bar */
   #kanban-board, #upcoming-scroll, .notif-list, .table-view-container { padding-bottom: 80px !important; }
 
-  /* Right panel — slide from right on tablet */
-  #detail-panel {
-    position: fixed;
-    right: 0;
-    top: 0;
-    bottom: 60px;
-    width: 50%;
-    min-width: 320px;
-    max-width: 420px;
-    z-index: 90;
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    height: auto;
-    max-height: none;
-    border-left: none;
-    border-top: none;
-    display: flex !important;
-  }
-  #detail-panel.open { transform: translateX(0); }
-  .dark #detail-panel { box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5); }
-
   /* Left panel — slide from left */
   #sidebar {
     position: fixed;
@@ -585,9 +539,6 @@
 /* ============================================================================
    iPAD MINI PORTRAIT — 768px to 834px portrait
    ============================================================================ */
-@media (min-width: 768px) and (max-width: 834px) and (orientation: portrait) {
-  #detail-panel { width: 100%; max-width: 380px; }
-}
 
 /* ============================================================================
    MOBILE PORTRAIT — max 767px
@@ -617,28 +568,6 @@
     height: 100%;
     overflow: hidden;
   }
-
-  /* Right sidebar — full width slide panel on phones */
-  #detail-panel {
-    position: fixed;
-    right: 0;
-    top: 0;
-    bottom: 60px;
-    width: 100%;
-    z-index: 90;
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    height: auto;
-    max-height: none;
-    border-left: none;
-    border-top: none;
-    display: flex !important;
-  }
-  #detail-panel.open { transform: translateX(0); }
-  .dark #detail-panel { box-shadow: -4px 0 20px rgba(0, 0, 0, 0.6); }
 
   /* Left sidebar — full width on phones */
   #sidebar {
@@ -722,7 +651,6 @@
   /* topbar = 48px for DevTrack */
   #main { height: calc(100vh - 48px - 10vh); }
 
-  #detail-panel { bottom: 10vh; width: 50%; min-width: 300px; }
   #sidebar { bottom: 10vh; }
   .mobile-overlay { bottom: 10vh; }
 
@@ -735,7 +663,6 @@
    ============================================================================ */
 @media (max-width: 480px) and (orientation: portrait) {
   .view-tab { min-width: 80px; }
-  #detail-panel { width: 100%; max-width: none; }
   .modal { max-height: 90vh; max-width: 98%; border-radius: 16px; }
 }
 
