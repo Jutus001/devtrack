@@ -600,19 +600,44 @@ export function renderFilterBar(filters, onChange) {
     </div>
   `;
 
+  // Read all current filter values from the DOM (avoids stale-closure bugs)
+  function readFilters() {
+    return {
+      search:     document.getElementById('filter-search')?.value || '',
+      status:     document.getElementById('filter-status')?.value || '',
+      priority:   document.getElementById('filter-priority')?.value || '',
+      task_type:  document.getElementById('filter-type')?.value || '',
+      is_blocker: document.getElementById('filter-blocker')?.querySelector('input')?.checked || false,
+    };
+  }
+
   // Wire events
   let debounceTimer;
-  document.getElementById('filter-search')?.addEventListener('input', e => {
+  document.getElementById('filter-search')?.addEventListener('input', () => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => onChange({ ...filters, search: e.target.value }), 300);
+    debounceTimer = setTimeout(() => onChange(readFilters()), 300);
   });
-  document.getElementById('filter-status')?.addEventListener('change', e => onChange({ ...filters, status: e.target.value }));
-  document.getElementById('filter-priority')?.addEventListener('change', e => onChange({ ...filters, priority: e.target.value }));
-  document.getElementById('filter-type')?.addEventListener('change', e => onChange({ ...filters, task_type: e.target.value }));
+  document.getElementById('filter-status')?.addEventListener('change', () => onChange(readFilters()));
+  document.getElementById('filter-priority')?.addEventListener('change', () => onChange(readFilters()));
+  document.getElementById('filter-type')?.addEventListener('change', () => onChange(readFilters()));
   document.getElementById('filter-blocker')?.addEventListener('click', () => {
-    onChange({ ...filters, is_blocker: !filters.is_blocker });
+    // Read after the click so checkbox state is already toggled
+    setTimeout(() => onChange(readFilters()), 0);
   });
-  document.getElementById('filter-clear')?.addEventListener('click', () => onChange({}));
+  document.getElementById('filter-clear')?.addEventListener('click', () => {
+    // Reset DOM state before calling onChange
+    const s = document.getElementById('filter-search');
+    const st = document.getElementById('filter-status');
+    const pr = document.getElementById('filter-priority');
+    const ty = document.getElementById('filter-type');
+    const bl = document.getElementById('filter-blocker');
+    if (s)  s.value = '';
+    if (st) st.value = '';
+    if (pr) pr.value = '';
+    if (ty) ty.value = '';
+    if (bl) { bl.classList.remove('active'); const cb = bl.querySelector('input'); if (cb) cb.checked = false; }
+    onChange({});
+  });
 }
 
 // ── Date utilities ────────────────────────────────────────────

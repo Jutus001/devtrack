@@ -514,7 +514,7 @@ export async function openSprintsModal(projectId) {
           <div class="sprint-name">${escHtml(s.name)}</div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="badge ${s.status === 'active' ? 'badge-green' : s.status === 'completed' ? 'badge-default' : 'badge-accent'}">${s.status}</span>
-            <button class="btn btn-ghost btn-sm" data-delete-sprint="${s.id}" style="color:var(--red)">✕</button>
+            <button class="btn btn-ghost btn-sm btn-icon" data-delete-sprint="${s.id}" style="color:var(--red)" title="Delete sprint"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         </div>
         ${s.start_date ? `<div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin-top:4px">${s.start_date} → ${s.end_date || '?'}</div>` : ''}

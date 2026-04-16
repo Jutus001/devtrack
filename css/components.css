@@ -912,8 +912,7 @@ textarea.form-input {
 
 /* Actions cell — hover only via CSS */
 .td-actions { width: 48px; }
-.row-actions { display: flex; gap: 4px; opacity: 0; transition: opacity var(--t-fast); }
-.task-table tr:hover .row-actions { opacity: 1; }
+.row-actions { display: flex; gap: 4px; }
 
 .btn-row-edit {
   display: inline-flex;

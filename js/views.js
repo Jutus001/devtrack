@@ -137,7 +137,7 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
         return `
           <tr data-task-id="${task.id}"${task.is_blocker ? ' class="blocker-row"' : ''}>
             <td class="td-flag">
-              ${task.is_blocker ? `<span class="blocker-icon" title="Blocker">!</span>` : ''}
+              ${task.is_blocker ? `<span class="blocker-icon" title="Blocker"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>` : ''}
             </td>
             <td class="td-title">
               <div style="display:flex;align-items:center;gap:6px;min-width:0">

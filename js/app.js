@@ -11,6 +11,24 @@ import { loadTasks } from './tasks.js';
 import { renderTableView, renderUpcomingView, renderRoadmapView } from './views.js';
 import { showLoading, forceHideLoader, showToast } from './ui.js';
 
+// ── Persisted state helpers ───────────────────────────────────
+function loadPersistedState() {
+  const DEFAULTS = { search: '', status: '', priority: '', task_type: '', is_blocker: false };
+  let filters = DEFAULTS;
+  let activeView = 'kanban';
+  try {
+    const saved = localStorage.getItem('devtrack_filters');
+    if (saved) filters = { ...DEFAULTS, ...JSON.parse(saved) };
+  } catch (_) {}
+  try {
+    const v = localStorage.getItem('devtrack_view');
+    if (v && ['kanban','table','upcoming','roadmap'].includes(v)) activeView = v;
+  } catch (_) {}
+  return { filters, activeView };
+}
+
+const _persisted = loadPersistedState();
+
 // ── Global State ─────────────────────────────────────────────
 export const AppState = {
   user: null,
@@ -19,14 +37,8 @@ export const AppState = {
   currentProjectId: null,
   currentProject: null,
   tasks: [],
-  activeView: 'kanban', // 'kanban' | 'table' | 'upcoming' | 'roadmap'
-  filters: {
-    search: '',
-    status: '',
-    priority: '',
-    task_type: '',
-    is_blocker: false
-  }
+  activeView: _persisted.activeView,
+  filters: _persisted.filters
 };
 
 // ============================================================================
@@ -156,7 +168,13 @@ async function bootApp(user) {
     const { renderFilterBar } = await import('./tasks.js');
     renderFilterBar(AppState.filters, (newFilters) => {
       AppState.filters = newFilters;
+      try { localStorage.setItem('devtrack_filters', JSON.stringify(newFilters)); } catch (_) {}
       refreshCurrentView();
+    });
+
+    // Sync view tab UI to persisted active view
+    document.querySelectorAll('.view-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.view === AppState.activeView);
     });
     
     if (projects.length > 0) {
@@ -296,6 +314,7 @@ export function showDashboard() {
 
 export function setView(view) {
   AppState.activeView = view;
+  try { localStorage.setItem('devtrack_view', view); } catch (_) {}
   document.querySelectorAll('.view-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.view === view);
   });

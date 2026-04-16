@@ -71,15 +71,6 @@
   letter-spacing: -.02em;
 }
 
-#sidebar-logo span.logo-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--accent);
-  display: inline-block;
-  box-shadow: 0 0 8px rgba(79, 142, 255, .5);
-  flex-shrink: 0;
-}
 
 #sidebar-logo .logo-text {
   flex: 1;
@@ -533,7 +524,6 @@
 #app.sidebar-collapsed .sidebar-section { padding: 0 var(--s2); }
 #app.sidebar-collapsed #sidebar-footer { padding: var(--s2); gap: 2px; }
 #app.sidebar-collapsed #sidebar-collapse-btn { margin-left: 0; }
-#app.sidebar-collapsed .project-dot { margin: 0; }
 
 /* contenteditable placeholder */
 #left-off-text:empty:before {
