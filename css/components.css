@@ -1408,23 +1408,6 @@ textarea.form-input {
 .color-swatch:hover { transform: scale(1.15); }
 .color-swatch.selected { border-color: var(--text); }
 
-/* ══════════════════════════════════════════
-   NOTIFICATIONS (dropdown variant — overrides slide-in above)
-══════════════════════════════════════════ */
-#notifications-panel {
-  position: fixed;
-  top: 56px;
-  right: 12px;
-  width: 340px;
-  max-height: 420px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r3);
-  box-shadow: var(--shadow-xl);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-}
 
 .notif-header {
   padding: 12px 16px;

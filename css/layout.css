@@ -512,7 +512,16 @@
   grid-template-columns: 52px 1fr;
 }
 #app.sidebar-collapsed #sidebar-logo .logo-text { display: none; }
-#app.sidebar-collapsed #sidebar-logo { justify-content: center; padding: 0; }
+#app.sidebar-collapsed #sidebar-logo {
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+}
+#app.sidebar-collapsed #sidebar-collapse-btn {
+  margin-left: 0;
+  width: 36px;
+  height: 36px;
+}
 #app.sidebar-collapsed .sidebar-section-label { display: none; }
 #app.sidebar-collapsed .sidebar-item .sidebar-label { display: none; }
 #app.sidebar-collapsed .sidebar-item .sidebar-count { display: none; }
