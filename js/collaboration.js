@@ -20,7 +20,11 @@ export async function openTaskDetail(task) {
     <div class="panel-header">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
         <div style="font-size:16px;font-weight:600;color:var(--text);line-height:1.4">${escHtml(task.title)}</div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="btn-edit-task-detail" class="btn btn-secondary btn-sm" title="Edit task" style="gap:6px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
           <button id="btn-pin-task" class="btn btn-ghost btn-icon btn-sm" title="Pin to Today's Focus">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><polyline points="16.5 9.4 16.5 16.01"/><polyline points="10 12.8 10 19.41"/></svg>
           </button>
@@ -127,6 +131,10 @@ export async function openTaskDetail(task) {
 
   document.addEventListener('keydown', escHandler);
   
+  panel.querySelector('#btn-edit-task-detail').onclick = () => {
+    import('./tasks.js').then(m => m.openEditTaskModal(task));
+  };
+
   panel.querySelector('#btn-pin-task').onclick = async () => {
     const { togglePinTask } = await import('./app.js');
     await togglePinTask(task.id);
