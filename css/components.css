@@ -321,6 +321,16 @@ textarea.form-input {
   cursor: default;
 }
 
+/* Prompt indicator (lightning bolt — shown on cards + table rows) */
+.card-prompt-dot {
+  display: inline-flex;
+  align-items: center;
+  color: #a855f7;
+  opacity: .85;
+  flex-shrink: 0;
+  cursor: default;
+}
+
 /* Progress bar */
 .progress-bar {
   height: 2px;

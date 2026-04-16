@@ -510,6 +510,13 @@ export async function renderTaskCard(task, opts = {}) {
     `<span class="card-tag-dot" title="${escHtml(t)}"></span>`
   ).join('');
 
+  // Prompt indicator
+  const promptHtml = task.prompt?.trim()
+    ? `<span class="card-prompt-dot" title="Has AI prompt">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </span>`
+    : '';
+
   // GitHub link — icon only
   const githubHtml = task.github_url
     ? `<a href="${escHtml(task.github_url)}" target="_blank" rel="noopener" title="${escHtml(task.github_url)}"
@@ -518,7 +525,7 @@ export async function renderTaskCard(task, opts = {}) {
       </a>`
     : '';
 
-  const hasBottomRow = dueHtml || tagDots || assigneeHtml || githubHtml;
+  const hasBottomRow = dueHtml || tagDots || assigneeHtml || githubHtml || promptHtml;
 
   return `
     <div class="task-card ${task.is_blocker ? 'is-blocker' : ''}"
@@ -541,6 +548,7 @@ export async function renderTaskCard(task, opts = {}) {
         <span class="card-type-icon" style="color:${typeConf.color}" title="${typeConf.label}">${typeConf.svg}</span>
         ${dueHtml}
         ${tagDots ? `<div class="card-tags-inline">${tagDots}</div>` : ''}
+        ${promptHtml}
         ${githubHtml}
         ${assigneeHtml}
       </div>` : ''}

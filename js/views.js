@@ -73,11 +73,12 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
     </div>`;
 
   try {
-    const [tasks, members] = await Promise.all([
-      getTasks(projectId, filters),
-      getProjectMembers(projectId).catch(() => [])
-    ]);
+    // Use pre-loaded tasks from AppState to avoid double-fetching
+    const tasks = Array.isArray(appState.tasks)
+      ? [...appState.tasks]
+      : await getTasks(projectId, filters);
 
+    const members = await getProjectMembers(projectId).catch(() => []);
     let profileMap = {};
     if (members.length > 0) {
       const profiles = await getProfiles(members.map(m => m.user_id)).catch(() => []);
@@ -139,7 +140,10 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
               ${task.is_blocker ? `<span class="blocker-icon" title="Blocker">!</span>` : ''}
             </td>
             <td class="td-title">
-              <span class="task-title-text">${escHtml(task.title)}</span>
+              <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                <span class="task-title-text">${escHtml(task.title)}</span>
+                ${task.prompt?.trim() ? `<span class="card-prompt-dot" title="Has AI prompt"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>` : ''}
+              </div>
               ${(task.tags||[]).length > 0 ? `<div class="td-tags-inline">${tagChips}</div>` : ''}
             </td>
             <td class="table-col-hide-tablet">
@@ -227,7 +231,7 @@ export async function renderUpcomingView(projectId, filters = {}, appState = {})
   </div>`;
 
   try {
-    const tasks = await getTasks(projectId, { ...filters });
+    const tasks = Array.isArray(appState.tasks) ? [...appState.tasks] : await getTasks(projectId, { ...filters });
     const scroll = document.getElementById('upcoming-scroll');
     if (!scroll) return;
 
@@ -316,11 +320,11 @@ export async function renderRoadmapView(projectId, appState = {}) {
   </div>`;
 
   try {
-    const [tasks, milestones, sprints] = await Promise.all([
-      getTasks(projectId),
+    const [milestones, sprints] = await Promise.all([
       getMilestones(projectId).catch(() => []),
       getSprints(projectId).catch(() => [])
     ]);
+    const tasks = Array.isArray(appState.tasks) ? [...appState.tasks] : await getTasks(projectId);
 
     const roadmap = document.getElementById('roadmap-view');
     if (!roadmap) return;

@@ -42,25 +42,16 @@ export async function renderKanban(projectId, filters = {}, appState = {}) {
   </div>`;
 
   try {
-    const [tasks, members] = await Promise.all([
-      getTasks(projectId, filters),
-      getProjectMembers(projectId).catch(() => [])
-    ]);
+    // Use pre-loaded tasks from AppState to avoid double-fetching
+    const tasks = Array.isArray(appState.tasks)
+      ? [...appState.tasks]
+      : await getTasks(projectId, filters);
 
     _taskCache = tasks;
     normalizeTasks(tasks);
 
-    // Fetch checklist and subtasks for all tasks in parallel
-    await Promise.all(tasks.map(async t => {
-      const [checks, subs] = await Promise.all([
-        import('./supabase.js').then(m => m.getChecklist(t.id).catch(() => [])),
-        import('./supabase.js').then(m => m.getSubtasks(t.id).catch(() => []))
-      ]);
-      t._checklist = checks;
-      t._subtasks = subs;
-    }));
-
-    // Collect all unique user IDs (members + task creators + assignees)
+    // Fetch members + profiles in one round-trip (no per-task queries)
+    const members = await getProjectMembers(projectId).catch(() => []);
     const userIds = new Set(members.map(m => m.user_id));
     tasks.forEach(t => {
       if (t.user_id) userIds.add(t.user_id);

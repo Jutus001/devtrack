@@ -432,7 +432,7 @@ function setupGlobalEvents() {
 
   // Sidebar
   document.getElementById('btn-new-project')?.addEventListener('click', openCreateProjectModal);
-  document.getElementById('btn-join-project')?.addEventListener('click', openJoinProjectModal);
+  document.getElementById('btn-join-project')?.addEventListener('click', () => openJoinProjectModal());
 
   document.getElementById('btn-add-task')?.addEventListener('click', () => {
     if (AppState.currentProjectId) {
