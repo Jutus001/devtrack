@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevTrack — Sign In</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234f8eff'/></svg>">
+
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      background: var(--bg);
+      overflow: auto;
+    }
+
+    .login-wrap {
+      width: 100%;
+      max-width: 400px;
+      padding: 24px 16px;
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .login-logo-text {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+
+    .login-logo-text span { color: var(--accent); }
+
+    .login-logo-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body data-theme="dark">
+
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div class="login-logo-text">dev<span>track</span></div>
+      <div class="login-logo-sub" id="login-subtitle">Welcome back</div>
+    </div>
+
+    <div class="auth-card" id="auth-card">
+      <!-- Populated by login.js -->
+    </div>
+  </div>
+
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>

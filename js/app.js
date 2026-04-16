@@ -2,9 +2,9 @@
 // Global App State & Orchestrator
 
 import { supabase } from './supabase.js';
-import { 
-  initTheme, showAuthScreen, hideAuthScreen, 
-  initTopbarAvatar, toggleProfilePanel, toggleTheme 
+import {
+  initTheme,
+  initTopbarAvatar, toggleProfilePanel, toggleTheme
 } from './auth.js';
 import { loadProjectsSidebar, openCreateProjectModal, openJoinProjectModal } from './projects.js';
 import { loadTasks } from './tasks.js';
@@ -102,14 +102,14 @@ async function init() {
   if (existingSession) {
     AppState.user = existingSession.user;
     AppState.userId = existingSession.user.id;
-    hideAuthScreen();
     _isBooting = true;
     _hasBooted = false;
     await bootApp(existingSession.user);
     _isBooting = false;
     _hasBooted = true;
   } else {
-    showAuthScreen();
+    window.location.replace('login.html');
+    return;
   }
   forceHideLoader(); // always guaranteed to clear the loader
 
@@ -121,17 +121,12 @@ async function init() {
     if (event === 'SIGNED_IN' && session && !_hasBooted && !_isBooting) {
       AppState.user = session.user;
       AppState.userId = session.user.id;
-      hideAuthScreen();
       _isBooting = true;
       await bootApp(session.user);
       _isBooting = false;
       _hasBooted = true;
     } else if (event === 'SIGNED_OUT') {
-      AppState.user = null;
-      AppState.userId = null;
-      _isBooting = false;
-      _hasBooted = false;
-      showAuthScreen();
+      window.location.replace('login.html');
     }
   });
 
@@ -450,6 +445,9 @@ function setupGlobalEvents() {
     toggleNotificationsPanel();
   });
 
+  document.getElementById('btn-close-notifications')?.addEventListener('click', closeNotificationsPanel);
+  document.getElementById('notifications-backdrop')?.addEventListener('click', closeNotificationsPanel);
+
   document.getElementById('btn-mark-all-read')?.addEventListener('click', markAllNotificationsRead);
 
   // Export
@@ -476,22 +474,25 @@ function setupGlobalEvents() {
 }
 
 // ── Notifications ────────────────────────────────────────────
+function openNotificationsPanel() {
+  const panel    = document.getElementById('notifications-panel');
+  const backdrop = document.getElementById('notifications-backdrop');
+  panel.classList.add('open');
+  backdrop?.classList.add('open');
+  loadNotifications();
+}
+
+function closeNotificationsPanel() {
+  document.getElementById('notifications-panel')?.classList.remove('open');
+  document.getElementById('notifications-backdrop')?.classList.remove('open');
+}
+
 function toggleNotificationsPanel() {
   const panel = document.getElementById('notifications-panel');
-  if (panel.classList.contains('hidden')) {
-    panel.classList.remove('hidden');
-    loadNotifications();
-    // Close on outside click
-    setTimeout(() => {
-      document.addEventListener('click', function closeNotifs(e) {
-        if (!panel.contains(e.target) && !e.target.closest('#btn-notifications')) {
-          panel.classList.add('hidden');
-          document.removeEventListener('click', closeNotifs);
-        }
-      });
-    }, 0);
+  if (panel.classList.contains('open')) {
+    closeNotificationsPanel();
   } else {
-    panel.classList.add('hidden');
+    openNotificationsPanel();
   }
 }
 

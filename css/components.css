@@ -10,13 +10,14 @@
   padding: 6px 14px;
   border-radius: var(--r2);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all var(--t-fast);
   white-space: nowrap;
   user-select: none;
   line-height: 1;
+  letter-spacing: -.005em;
 }
 
 .btn:disabled { opacity: .45; pointer-events: none; }
@@ -71,12 +72,10 @@
 .form-group { display: flex; flex-direction: column; gap: var(--s1); }
 
 .form-label {
-  font-size: 11px;
-  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .01em;
 }
 
 .form-input {
@@ -142,10 +141,9 @@ textarea.form-input {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--r-full);
-  font-size: 11px;
-  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
@@ -159,7 +157,7 @@ textarea.form-input {
 .badge-purple   { background: var(--purple-dim); color: var(--purple); }
 
 /* Status badges */
-.status-badge { font-family: var(--font-mono); }
+.status-badge { font-weight: 500; }
 [data-status="todo"]        { --s-bg: var(--elevated); --s-color: var(--text-muted); }
 [data-status="in_progress"] { --s-bg: var(--accent-dim); --s-color: var(--accent); }
 [data-status="in_review"]   { --s-bg: var(--purple-dim); --s-color: var(--purple); }
@@ -404,17 +402,16 @@ textarea.form-input {
 }
 
 .col-title {
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .07em;
+  letter-spacing: .06em;
   flex: 1;
 }
 
 .col-count {
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--text-dim);
   background: var(--overlay);
   padding: 1px 7px;
@@ -543,10 +540,9 @@ textarea.form-input {
 }
 
 .modal-title {
-  font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: -.01em;
+  letter-spacing: -.015em;
 }
 
 .modal-close-btn {
@@ -711,25 +707,45 @@ textarea.form-input {
 .toast-close:hover { color: var(--text); }
 
 /* ══════════════════════════════════════════
-   NOTIFICATIONS PANEL
+   NOTIFICATIONS PANEL — centered modal
 ══════════════════════════════════════════ */
+#notifications-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 598;
+  animation: fadeIn 150ms ease;
+}
+#notifications-backdrop.open { display: block; }
+
 #notifications-panel {
   position: fixed;
-  top: 48px;
-  right: 0;
-  width: 360px;
-  height: calc(100dvh - 48px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  max-height: 70dvh;
   background: var(--surface);
-  border-left: 1px solid var(--border);
-  z-index: 300;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r4);
+  z-index: 599;
   display: flex;
   flex-direction: column;
-  transform: translateX(100%);
-  transition: transform var(--t-slow);
   box-shadow: var(--shadow-xl);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-base), transform var(--t-base);
 }
 
-#notifications-panel.open { transform: translateX(0); }
+#notifications-panel.open {
+  opacity: 1;
+  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1);
+}
 
 .notif-header {
   display: flex;
@@ -795,12 +811,11 @@ textarea.form-input {
 
 .task-table th {
   text-align: left;
-  padding: 8px var(--s3);
-  font-family: var(--font-mono);
-  font-size: 10px;
+  padding: 9px var(--s3);
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .05em;
   color: var(--text-dim);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -912,12 +927,12 @@ textarea.form-input {
 .tag-pill {
   display: inline-flex;
   align-items: center;
-  padding: 1px 6px;
+  padding: 1px 7px;
   background: var(--elevated);
   border: 1px solid var(--border);
   border-radius: var(--r-full);
-  font-size: 10px;
-  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--text-muted);
   white-space: nowrap;
 }

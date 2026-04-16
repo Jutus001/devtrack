@@ -36,13 +36,11 @@ export async function toggleTheme() {
 let _mode = 'login'; // 'login' | 'signup'
 
 export function showAuthScreen() {
-  const el = document.getElementById('auth-screen');
-  if (el) { el.classList.remove('hidden'); renderAuthForm(); }
+  window.location.replace('login.html');
 }
 
 export function hideAuthScreen() {
-  const el = document.getElementById('auth-screen');
-  if (el) el.classList.add('hidden');
+  // no-op — auth is handled on login.html
 }
 
 function renderAuthForm() {
