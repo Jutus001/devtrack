@@ -459,6 +459,8 @@ export async function deleteTaskWithConfirm(task) {
     const panel = document.getElementById('detail-panel');
     if (panel && panel.dataset.taskId === task.id) {
       panel.classList.remove('open');
+      document.getElementById('detail-backdrop')?.classList.remove('open');
+      document.body.style.overflow = '';
     }
   } catch (err) { showToast(err.message, 'error'); }
 }

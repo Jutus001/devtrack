@@ -183,7 +183,7 @@
 ══════════════════════════════════════════ */
 @media (min-width: 1400px) {
   #app {
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 256px 1fr;
   }
 
   .kanban-column {

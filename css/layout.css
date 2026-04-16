@@ -3,7 +3,7 @@
 /* ── App Shell ── */
 #app {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 236px 1fr;
   grid-template-rows: 48px 1fr;
   grid-template-areas:
     "sidebar topbar"
@@ -51,7 +51,7 @@
   grid-area: sidebar;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: var(--bg);
   border-right: 1px solid var(--border);
   overflow: hidden;
   z-index: 60;
@@ -60,48 +60,58 @@
 #sidebar-logo {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  padding: 0 var(--s4);
+  gap: 10px;
+  padding: 0 14px 0 16px;
   height: 48px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -.02em;
 }
 
 #sidebar-logo span.logo-dot {
-  width: 8px; height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--accent);
   display: inline-block;
+  box-shadow: 0 0 8px rgba(79, 142, 255, .5);
+  flex-shrink: 0;
 }
+
+#sidebar-logo .logo-text {
+  flex: 1;
+  min-width: 0;
+}
+
+#sidebar-logo .logo-text span { color: var(--accent); }
 
 #sidebar-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: var(--s2) 0 var(--s4);
+  padding: var(--s3) 0 var(--s2);
 }
 
 .sidebar-section {
-  padding: var(--s4) var(--s4) var(--s2);
+  padding: 0 var(--s3);
 }
 
 .sidebar-section-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: .06em;
+  letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--text-dim);
-  margin-bottom: var(--s2);
+  padding: var(--s2) var(--s2) var(--s2);
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  padding: 6px var(--s3);
+  gap: 10px;
+  padding: 7px 10px;
   border-radius: var(--r2);
   cursor: pointer;
   font-size: 13px;
@@ -110,6 +120,11 @@
   transition: background var(--t-fast), color var(--t-fast);
   user-select: none;
   min-width: 0;
+  position: relative;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
 }
 
 .sidebar-item:hover {
@@ -120,6 +135,17 @@
 .sidebar-item.active {
   background: var(--accent-dim);
   color: var(--accent);
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  bottom: 5px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
 }
 
 .sidebar-item .sidebar-icon {
@@ -143,8 +169,8 @@
   font-size: 11px;
   font-weight: 600;
   background: var(--elevated);
-  padding: 1px 6px;
-  border-radius: var(--r-full);
+  padding: 1px 7px;
+  border-radius: 99px;
   color: var(--text-dim);
   flex-shrink: 0;
 }
@@ -167,44 +193,64 @@
   color: var(--text-dim);
   cursor: pointer;
   flex-shrink: 0;
-  margin-left: auto;
   padding: 0;
   transition: background var(--t-fast), color var(--t-fast);
 }
 .project-menu-btn:hover {
-  background: var(--overlay);
+  background: var(--elevated);
   color: var(--text);
 }
-.project-item:hover .project-menu-btn {
-  display: flex;
-}
-.project-item.active .project-menu-btn {
-  display: flex;
-}
+.project-item:hover .project-menu-btn { display: flex; }
+.project-item.active .project-menu-btn { display: flex; }
 
-/* Project dot color */
+/* Project dot */
 .project-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
   flex-shrink: 0;
 }
 
-/* Add project button */
-#btn-add-project {
+/* Sidebar footer — fixed action buttons */
+#sidebar-footer {
+  flex-shrink: 0;
+  padding: var(--s2) var(--s3) var(--s3);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-action-btn {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  padding: 6px var(--s3);
+  gap: 9px;
+  padding: 7px 10px;
   border-radius: var(--r2);
   cursor: pointer;
-  font-size: 12px;
-  color: var(--text-dim);
-  transition: all var(--t-fast);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: none;
   width: 100%;
   text-align: left;
+  transition: background var(--t-fast), color var(--t-fast);
+  user-select: none;
 }
-#btn-add-project:hover { color: var(--accent); background: var(--accent-dim); }
+
+.sidebar-action-btn:hover {
+  background: var(--accent-dim);
+}
+
+.sidebar-action-secondary {
+  color: var(--text-muted);
+}
+
+.sidebar-action-secondary:hover {
+  background: var(--elevated);
+  color: var(--text);
+}
 
 /* ── Main content ── */
 #main {
@@ -479,11 +525,13 @@
 #app.sidebar-collapsed .sidebar-section-label { display: none; }
 #app.sidebar-collapsed .sidebar-item .sidebar-label { display: none; }
 #app.sidebar-collapsed .sidebar-item .sidebar-count { display: none; }
-#app.sidebar-collapsed .sidebar-item { justify-content: center; padding: 6px; }
+#app.sidebar-collapsed .sidebar-item { justify-content: center; padding: 7px 6px; }
+#app.sidebar-collapsed .sidebar-item.active::before { display: none; }
 #app.sidebar-collapsed .project-menu-btn { display: none !important; }
-#app.sidebar-collapsed #btn-new-project .sidebar-label { display: none; }
-#app.sidebar-collapsed #btn-join-project .sidebar-label { display: none; }
-#app.sidebar-collapsed .sidebar-section { padding: var(--s2) var(--s2); }
+#app.sidebar-collapsed .sidebar-action-btn .sidebar-label { display: none; }
+#app.sidebar-collapsed .sidebar-action-btn { justify-content: center; padding: 7px 6px; }
+#app.sidebar-collapsed .sidebar-section { padding: 0 var(--s2); }
+#app.sidebar-collapsed #sidebar-footer { padding: var(--s2); gap: 2px; }
 #app.sidebar-collapsed #sidebar-collapse-btn { margin-left: 0; }
 #app.sidebar-collapsed .project-dot { margin: 0; }
 

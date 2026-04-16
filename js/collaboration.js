@@ -25,6 +25,10 @@ export async function openTaskDetail(task) {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Edit
           </button>
+          <button id="btn-delete-task-detail" class="btn btn-ghost btn-sm" title="Delete task" style="gap:6px;color:var(--red)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Delete
+          </button>
           <button id="btn-pin-task" class="btn btn-ghost btn-icon btn-sm" title="Pin to Today's Focus">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><polyline points="16.5 9.4 16.5 16.01"/><polyline points="10 12.8 10 19.41"/></svg>
           </button>
@@ -133,6 +137,10 @@ export async function openTaskDetail(task) {
   
   panel.querySelector('#btn-edit-task-detail').onclick = () => {
     import('./tasks.js').then(m => m.openEditTaskModal(task));
+  };
+
+  panel.querySelector('#btn-delete-task-detail').onclick = () => {
+    import('./tasks.js').then(m => m.deleteTaskWithConfirm(task));
   };
 
   panel.querySelector('#btn-pin-task').onclick = async () => {
