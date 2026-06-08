@@ -180,6 +180,28 @@ textarea.form-input {
   }
 }
 
+.issue-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.issue-tool-textarea {
+  min-height: 240px;
+}
+
+.issue-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .issue-tool-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ══════════════════════════════════════════
    BADGES
 ══════════════════════════════════════════ */

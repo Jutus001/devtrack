@@ -9,7 +9,7 @@ import {
 import { loadProjectsSidebar, openCreateProjectModal, openJoinProjectModal } from './projects.js';
 import { loadTasks } from './tasks.js';
 import { renderTableView, renderUpcomingView, renderRoadmapView } from './views.js';
-import { showLoading, forceHideLoader, showToast } from './ui.js';
+import { showLoading, forceHideLoader, showToast, openModal } from './ui.js';
 
 // ── Persisted state helpers ───────────────────────────────────
 function loadPersistedState() {
@@ -222,6 +222,7 @@ export async function switchProject(projectId) {
   document.getElementById('no-project').style.display = 'none';
   document.getElementById('project-view').style.display = 'flex';
   document.getElementById('btn-add-task').style.display = '';
+  document.getElementById('btn-issue-tool').style.display = '';
   document.getElementById('btn-export').style.display = '';
 
   await refreshCurrentView();
@@ -315,6 +316,7 @@ export function showDashboard() {
   document.getElementById('project-view').style.display = 'none';
   document.getElementById('no-project').style.display = 'flex';
   document.getElementById('btn-add-task').style.display = 'none';
+  document.getElementById('btn-issue-tool').style.display = 'none';
 }
 
 export function setView(view) {
@@ -463,6 +465,8 @@ function setupGlobalEvents() {
     }
   });
 
+  document.getElementById('btn-issue-tool')?.addEventListener('click', openIssueCaptureTool);
+
   document.getElementById('btn-notifications')?.addEventListener('click', e => {
     e.stopPropagation();
     toggleNotificationsPanel();
@@ -565,6 +569,91 @@ function parseQuickIssue(raw) {
     priority,
     tags
   };
+}
+
+function openIssueCaptureTool() {
+  if (!AppState.currentProjectId) {
+    showToast('Select a project first', 'warning');
+    return;
+  }
+
+  openModal({
+    id: 'modal-issue-capture',
+    title: 'Capture Issue',
+    size: 'md',
+    primaryLabel: 'Create Issue',
+    body: `
+      <div class="issue-tool">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input class="form-input" id="issue-title" placeholder="Short issue title" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Details</label>
+          <textarea class="form-input issue-tool-textarea" id="issue-details" rows="10" placeholder="Write everything here: what happened, where you were testing, steps, expected result, actual result, links, screenshots notes..."></textarea>
+        </div>
+        <div class="issue-tool-grid">
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-input form-select" id="issue-type">
+              <option value="bug">Bug</option>
+              <option value="feature">Feature</option>
+              <option value="chore">Chore</option>
+              <option value="research">Research</option>
+              <option value="design">Design</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select class="form-input form-select" id="issue-priority">
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Save To</label>
+            <select class="form-input form-select" id="issue-status">
+              <option value="backlog">Issue Inbox</option>
+              <option value="todo">To Do</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `,
+    onPrimary: async () => {
+      const titleInput = document.getElementById('issue-title');
+      const detailsInput = document.getElementById('issue-details');
+      const details = detailsInput.value.trim();
+      const title = titleInput.value.trim() || details.split('\n').find(Boolean)?.trim();
+
+      if (!title) {
+        showToast('Write a title or details first', 'error');
+        return false;
+      }
+
+      const taskType = document.getElementById('issue-type').value;
+      const priority = document.getElementById('issue-priority').value;
+      const status = document.getElementById('issue-status').value;
+
+      await createTask({
+        project_id: AppState.currentProjectId,
+        title,
+        description: details,
+        task_type: taskType,
+        status,
+        priority,
+        tags: taskType === 'bug' ? ['issue'] : [],
+        bug_fields: taskType === 'bug' ? { actual: details } : {}
+      });
+
+      showToast('Issue created', 'success');
+      await refreshCurrentView();
+      return true;
+    }
+  });
 }
 
 // ── Notifications ────────────────────────────────────────────
