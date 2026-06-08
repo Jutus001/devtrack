@@ -1,7 +1,7 @@
 // DevTrack — app.js
 // Global App State & Orchestrator
 
-import { supabase } from './supabase.js';
+import { supabase, createTask } from './supabase.js';
 import {
   initTheme,
   initTopbarAvatar, toggleProfilePanel, toggleTheme
@@ -243,6 +243,10 @@ function ensureProjectViewStructure() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" style="flex-shrink:0"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           <span id="left-off-text" contenteditable="true" style="flex:1;font-size:12px;color:var(--text-muted);outline:none;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-placeholder="Note where you left off…"></span>
           <button id="btn-save-wilo" class="btn btn-ghost btn-sm" style="font-size:11px;opacity:0;pointer-events:none;flex-shrink:0">Save</button>
+          <div class="quick-issue-capture">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <input id="quick-issue-input" type="text" placeholder="Capture issue..." autocomplete="off" />
+          </div>
           <button id="decision-log-box" class="btn btn-ghost btn-sm" style="font-size:11px;flex-shrink:0;gap:5px">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             Log
@@ -263,6 +267,7 @@ function ensureProjectViewStructure() {
       if (btn) { btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; }
     });
     document.getElementById('decision-log-box')?.addEventListener('click', openDecisionLogModal);
+    bindQuickIssueCapture();
   }
 }
 
@@ -484,11 +489,82 @@ function setupGlobalEvents() {
     if (btn) { btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; }
   });
   document.getElementById('decision-log-box')?.addEventListener('click', openDecisionLogModal);
+  bindQuickIssueCapture();
 
   // Tabs
   document.querySelectorAll('.view-tab').forEach(tab => {
     tab.addEventListener('click', () => setView(tab.dataset.view));
   });
+}
+
+function bindQuickIssueCapture() {
+  const input = document.getElementById('quick-issue-input');
+  if (!input || input.dataset.bound === '1') return;
+  input.dataset.bound = '1';
+
+  input.addEventListener('keydown', async e => {
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+    e.preventDefault();
+
+    const raw = input.value.trim();
+    if (!raw) return;
+    if (!AppState.currentProjectId) {
+      showToast('Select a project first', 'warning');
+      return;
+    }
+
+    input.disabled = true;
+    try {
+      const parsed = parseQuickIssue(raw);
+      await createTask({
+        project_id: AppState.currentProjectId,
+        title: parsed.title,
+        description: parsed.description,
+        task_type: parsed.taskType,
+        status: parsed.status,
+        priority: parsed.priority,
+        tags: parsed.tags,
+        bug_fields: parsed.taskType === 'bug' ? { actual: raw } : {}
+      });
+      input.value = '';
+      showToast(parsed.status === 'todo' ? 'Todo captured' : 'Issue captured', 'success');
+      await refreshCurrentView();
+    } catch (err) {
+      showToast(err.message || 'Failed to capture issue', 'error');
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
+  });
+}
+
+function parseQuickIssue(raw) {
+  const lower = raw.toLowerCase();
+  let title = raw;
+  let status = 'backlog';
+  let taskType = 'bug';
+  const tags = ['issue'];
+
+  if (lower.startsWith('todo:')) {
+    title = raw.slice(5).trim();
+    status = 'todo';
+    taskType = 'chore';
+    tags[0] = 'todo';
+  } else if (lower.startsWith('bug:')) {
+    title = raw.slice(4).trim();
+  }
+
+  const priority = title.startsWith('!') ? 'high' : 'medium';
+  if (title.startsWith('!')) title = title.slice(1).trim();
+
+  return {
+    title: title || raw,
+    description: raw,
+    taskType,
+    status,
+    priority,
+    tags
+  };
 }
 
 // ── Notifications ────────────────────────────────────────────

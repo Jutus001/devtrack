@@ -137,6 +137,49 @@ textarea.form-input {
 .search-input input { flex: 1; font-size: 13px; background: none; color: var(--text); }
 .search-input svg { color: var(--text-dim); flex-shrink: 0; }
 
+.quick-issue-capture {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(300px, 28vw);
+  min-width: 170px;
+  padding: 4px 8px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  color: var(--red);
+  flex-shrink: 0;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+
+.quick-issue-capture:focus-within {
+  border-color: var(--red);
+  background: var(--surface);
+}
+
+.quick-issue-capture input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.quick-issue-capture input::placeholder {
+  color: var(--text-dim);
+}
+
+.quick-issue-capture input:disabled {
+  opacity: .6;
+}
+
+@media (max-width: 760px) {
+  .quick-issue-capture {
+    width: 42vw;
+    min-width: 130px;
+  }
+}
+
 /* ══════════════════════════════════════════
    BADGES
 ══════════════════════════════════════════ */

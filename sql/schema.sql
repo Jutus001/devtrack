@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   title       text NOT NULL,
   description text DEFAULT '',
   task_type   text DEFAULT 'feature' CHECK (task_type IN ('feature','bug','chore','research','design')),
-  status      text DEFAULT 'todo' CHECK (status IN ('todo','in_progress','in_review','done','blocked')),
+  status      text DEFAULT 'todo' CHECK (status IN ('backlog','todo','in_progress','in_review','done','blocked')),
   priority    text DEFAULT 'medium' CHECK (priority IN ('critical','high','medium','low')),
   tags        text[] DEFAULT '{}',
   archived    boolean DEFAULT false,
@@ -127,6 +127,11 @@ CREATE POLICY "tasks_project_access" ON tasks
   );
 
 -- Add new columns to existing tasks table
+DO $$ BEGIN
+  ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
+  ALTER TABLE tasks ADD CONSTRAINT tasks_status_check
+    CHECK (status IN ('backlog','todo','in_progress','in_review','done','blocked'));
+END $$;
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='assignees') THEN
     ALTER TABLE tasks ADD COLUMN assignees uuid[] DEFAULT '{}';
