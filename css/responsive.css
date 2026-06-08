@@ -27,6 +27,8 @@
   z-index: 790;
 }
 
+#mobile-fab { display: none; }
+
 /* ══════════════════════════════════════════
    MOBILE BOTTOM NAV — hidden by default, shown ≤900px
 ══════════════════════════════════════════ */
@@ -52,28 +54,29 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: none;
   background: transparent;
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: .01em;
   cursor: pointer;
   transition: all .15s;
-  border-radius: var(--r2);
-  min-height: 46px;
-  gap: 4px;
+  border-radius: var(--r3);
+  min-height: 52px;
+  gap: 2px;
   -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
 }
 .mobile-nav-btn:focus  { outline: none; }
 .mobile-nav-btn:active { transform: scale(.93); }
-.mobile-nav-btn svg    { flex-shrink: 0; }
+.mobile-nav-btn svg    { flex-shrink: 0; margin-bottom: 1px; }
 .mobile-nav-btn.active {
-  background: rgba(79, 142, 255, 0.12);
+  background: var(--accent-dim);
   color: var(--accent);
 }
+.mobile-nav-btn.active svg { color: var(--accent); }
 
 /* ══════════════════════════════════════════
    LARGE DESKTOP (≥ 1400px)
@@ -135,6 +138,30 @@
   .table-view-container { padding-bottom: 72px !important; }
   #sidebar-scroll    { padding-bottom: 72px; }
 
+  /* Mobile FAB */
+  #mobile-fab {
+    display: flex;
+    position: fixed;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    right: 16px;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    z-index: 95;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--t-fast), background var(--t-fast);
+    -webkit-tap-highlight-color: transparent;
+  }
+  #mobile-fab:active { transform: scale(.9); }
+  #mobile-fab svg { width: 24px; height: 24px; }
+
+  /* Hide desktop add button on small mobile */
+  #btn-add-task { display: none !important; }
+
   /* View toolbar: wrap */
   #view-toolbar { flex-wrap: wrap; }
   #filter-bar   { margin-left: 0 !important; width: 100%; }
@@ -181,7 +208,7 @@
 
   /* Prevent iOS input zoom */
   input:not([type="checkbox"]):not([type="radio"]),
-  select, textarea { font-size: 15px !important; }
+  select, textarea { font-size: 16px !important; }
 }
 
 /* ══════════════════════════════════════════
@@ -191,6 +218,24 @@
   /* Topbar tighter */
   #topbar { padding: 0 var(--s3); gap: var(--s2); }
   #topbar-title { font-size: 12px; }
+
+  /* Project Header: stack on small screens */
+  #project-header {
+    flex-wrap: wrap;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    height: auto !important;
+  }
+  .quick-issue-capture {
+    width: 100% !important;
+    order: 2;
+    margin-top: 4px;
+    height: 36px;
+    padding: 0 12px;
+  }
+  .quick-issue-capture input { font-size: 14px; }
+  #left-off-text { font-size: 13px !important; }
+  #decision-log-box { font-size: 12px !important; }
 
   /* View toolbar more compact */
   #view-toolbar { padding: var(--s2) var(--s3); gap: var(--s2); }
@@ -232,8 +277,20 @@
   /* Roadmap */
   .roadmap-label-col { width: 90px; min-width: 90px; font-size: 10px; }
 
-  /* Task card */
-  .task-card { padding: 7px 8px; }
+  /* Task card: larger touch area and visible handle */
+  .task-card { padding: 10px 12px; }
+  .card-drag-handle {
+    opacity: 1 !important;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 4px;
+    right: 4px;
+    color: var(--text-muted);
+  }
+  .card-drag-handle svg { width: 16px; height: 16px; }
 
   /* Detail modal: full screen on phone */
   #detail-panel {
@@ -332,3 +389,4 @@
   }
   .kanban-column { width: 100% !important; break-inside: avoid; margin-bottom: 16px; }
 }
+

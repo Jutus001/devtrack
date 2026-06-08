@@ -171,7 +171,8 @@ function onPointerMove(e) {
   if (DragState.phase === 'pre-drag') {
     const dx = Math.abs(e.clientX - DragState.startX);
     const dy = Math.abs(e.clientY - DragState.startY);
-    if (dx < 4 && dy < 4) return; // Minimum movement threshold
+    const threshold = e.pointerType === 'touch' ? 10 : 4;
+    if (dx < threshold && dy < threshold) return; // Minimum movement threshold
     startDrag(e);
   }
 
@@ -465,6 +466,10 @@ function initMobileIndicator(board) {
 // ── Refresh board in place ────────────────────────────────────
 export async function refreshKanban(appState = {}) {
   if (appState.currentProjectId) {
+    await renderKanban(appState.currentProjectId, _filters, appState);
+  }
+}
+appState.currentProjectId) {
     await renderKanban(appState.currentProjectId, _filters, appState);
   }
 }

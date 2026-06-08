@@ -98,6 +98,7 @@ body {
   line-height: 1.6;
   overflow: hidden;
   height: 100dvh;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

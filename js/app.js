@@ -209,8 +209,7 @@ export async function switchProject(projectId) {
 
   // On mobile, close sidebar after selecting a project
   if (window.innerWidth <= 900) {
-    document.getElementById('sidebar')?.classList.remove('open');
-    setMobileNavActive('board');
+    closeAllPanels();
   }
 
   // Update sidebar UI
@@ -462,6 +461,15 @@ function setupGlobalEvents() {
   document.getElementById('btn-add-task')?.addEventListener('click', () => {
     if (AppState.currentProjectId) {
       import('./tasks.js').then(m => m.openCreateTaskModal(AppState.currentProjectId));
+    }
+  });
+
+  document.getElementById('mobile-fab')?.addEventListener('click', () => {
+    if (AppState.currentProjectId) {
+      import('./tasks.js').then(m => m.openCreateTaskModal(AppState.currentProjectId));
+    } else {
+      showToast('Select a project first', 'warning');
+      toggleLeftPanel();
     }
   });
 
