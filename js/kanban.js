@@ -145,7 +145,14 @@ function onPointerDown(e) {
   if (!card) return;
   if (e.target.closest('a, button, input, select, textarea, [contenteditable]')) return;
 
-  e.preventDefault();
+  // On mobile/touch, require dragging from the handle to allow scrolling the board
+  if (e.pointerType === 'touch') {
+    if (!e.target.closest('.card-drag-handle')) return;
+    e.preventDefault(); // Only prevent scroll if we ARE on the handle
+  } else {
+    e.preventDefault();
+  }
+
   e.stopPropagation();
 
   const rect = card.getBoundingClientRect();

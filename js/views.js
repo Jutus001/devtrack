@@ -145,7 +145,11 @@ export async function renderTableView(projectId, filters = {}, appState = {}) {
                 <span class="task-title-text">${escHtml(task.title)}</span>
                 ${task.prompt?.trim() ? `<span class="card-prompt-dot" title="Has AI prompt"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>` : ''}
               </div>
-              ${(task.tags||[]).length > 0 ? `<div class="td-tags-inline">${tagChips}</div>` : ''}
+              <div class="mobile-only-details" style="display:none;margin-top:4px;gap:6px;align-items:center">
+                <span class="badge" style="background:${typeConf.color}1a;color:${typeConf.color};padding:1px 5px;font-size:9px">${typeConf.label}</span>
+                ${dueBadge}
+              </div>
+              ${(task.tags||[]).length > 0 ? `<div class="td-tags-inline table-col-hide-mobile">${tagChips}</div>` : ''}
             </td>
             <td class="table-col-hide-tablet">
               <span class="badge" style="background:${typeConf.color}1a;color:${typeConf.color};gap:5px">${typeConf.svg} ${typeConf.label}</span>
